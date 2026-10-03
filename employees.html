@@ -1,0 +1,2598 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Employees Directory — Codeline.AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-base: #0A0A0B;
+            --glass: rgba(255, 255, 255, 0.045);
+            --glass-strong: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.09);
+            --glass-blur: 20px;
+            --text-primary: #F4F4F5;
+            --text-muted: #A1A1AA;
+            --text-dim: #6B7280;
+            --accent: #A8AFC4;
+            --accent-glow: #D4D9E6;
+            --success: #34D399;
+            --error: #F87171;
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-base);
+            background-image:
+                radial-gradient(circle at 12% -10%, rgba(255, 255, 255, 0.05), transparent 45%),
+                radial-gradient(circle at 90% 0%, rgba(255, 255, 255, 0.03), transparent 40%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Correction margins layouts metrics */
+        .sidebar-spacer {
+            width: 240px;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar-spacer {
+                display: none;
+            }
+        }
+
+        .main-workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 24px;
+            overflow-x: hidden;
+        }
+
+        @media (max-width: 600px) {
+            .main-workspace {
+                padding: 16px;
+            }
+        }
+
+        .mobile-nav-bar {
+            display: none;
+            height: 50px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(var(--glass-blur));
+            border-radius: var(--radius-sm);
+            align-items: center;
+            padding: 0 16px;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-nav-bar {
+                display: flex;
+            }
+        }
+
+        .header-block {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .title-area h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .title-area p {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .btn-action {
+            background: var(--glass-strong);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(var(--glass-blur));
+            color: #fff;
+            border-radius: var(--radius-sm);
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.18s, border-color 0.18s, transform 0.18s;
+        }
+
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.18);
+            transform: translateY(-1px);
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .qa-btn {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(var(--glass-blur));
+            border-radius: var(--radius);
+            padding: 14px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.18s;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+        }
+
+        .qa-btn:hover {
+            border-color: rgba(255, 255, 255, 0.18);
+            background: var(--glass-strong);
+            transform: translateY(-2px);
+        }
+
+        .qa-icon {
+            font-size: 22px;
+            margin-bottom: 6px;
+        }
+
+        .qa-label {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .filter-deck {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+            -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-input-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 9px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 13.5px;
+            outline: none;
+            min-width: 240px;
+            flex: 1;
+            transition: border-color 0.18s, background 0.18s;
+        }
+
+        .search-input-box:focus {
+            border-color: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .dropdown-select {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 9px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 13.5px;
+            outline: none;
+        }
+
+        @media (max-width: 600px) {
+            .search-input-box {
+                min-width: 100%;
+            }
+
+            .dropdown-select {
+                flex: 1;
+            }
+        }
+
+        @media (max-width: 900px) {
+
+            .search-input-box,
+            .dropdown-select {
+                font-size: 16px;
+            }
+        }
+
+        .table-container {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+            -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+            border-radius: var(--radius);
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+            min-width: 800px;
+        }
+
+        .data-table th {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-primary);
+            padding: 14px 16px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover td {
+            background: rgba(255, 255, 255, 0.025);
+        }
+
+        .data-table tr:nth-child(even) td {
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .identity-badge {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar-placeholder {
+            width: 36px;
+            height: 36px;
+            background: var(--glass-strong);
+            border: 1.5px solid var(--glass-border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--accent-glow);
+            flex-shrink: 0;
+        }
+
+        .status-pill {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .pill-active {
+            background: rgba(52, 211, 153, 0.12);
+            color: #6EE7B7;
+            border: 1px solid rgba(52, 211, 153, 0.2);
+        }
+
+        .pill-inactive {
+            background: rgba(248, 113, 113, 0.12);
+            color: #FCA5A5;
+            border: 1px solid rgba(248, 113, 113, 0.2);
+        }
+
+        .link-profile {
+            color: var(--accent-glow);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .link-profile:hover {
+            text-decoration: underline;
+        }
+
+        .pagination-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            color: var(--text-muted);
+            font-size: 13.5px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-nav {
+            background: var(--glass);
+            color: #fff;
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+            backdrop-filter: blur(var(--glass-blur));
+            transition: background 0.18s;
+        }
+
+        .btn-nav:hover:not(:disabled) {
+            background: var(--glass-strong);
+        }
+
+        .btn-nav:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .scroll-sentinel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 22px 0 8px;
+            color: var(--text-dim);
+            font-size: 13px;
+            min-height: 20px;
+        }
+
+        .scroll-spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--glass-border);
+            border-top-color: var(--accent-glow);
+            border-radius: 50%;
+            animation: pd-spin 0.8s linear infinite;
+        }
+
+        .btn-secondary {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(var(--glass-blur));
+            color: #fff;
+            padding: 9px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            transition: background 0.18s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--glass-strong);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-card {
+            background: rgba(24, 24, 27, 0.75);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(28px) saturate(160%);
+            -webkit-backdrop-filter: blur(28px) saturate(160%);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+            border-radius: var(--radius);
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 540px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .form-group input,
+        .form-group select {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.18s, background 0.18s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .form-group select option {
+            background: #18181B;
+            color: #fff;
+        }
+
+        @media (max-width: 900px) {
+
+            .form-group input,
+            .form-group select {
+                font-size: 16px;
+            }
+        }
+
+        /* ============================================================
+           PROFILE DRAWER — slide-in panel (replaces employee_profile.html)
+           ============================================================ */
+        .profile-drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(4px);
+            z-index: 1200;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .profile-drawer-overlay.open {
+            display: block;
+            opacity: 1;
+        }
+
+        .profile-drawer-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 680px;
+            max-width: calc(100% - 48px);
+            height: 760px;
+            max-height: 90vh;
+            background: rgba(15, 15, 17, 0.95);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            backdrop-filter: blur(28px) saturate(160%);
+            -webkit-backdrop-filter: blur(28px) saturate(160%);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+            z-index: 1201;
+            display: flex;
+            flex-direction: column;
+            transform: translate(-50%, -50%) scale(0.95);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s ease;
+        }
+
+        .profile-drawer-panel.open {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        @media (max-width: 620px) {
+            .profile-drawer-panel {
+                width: calc(100% - 24px);
+                height: 90vh;
+                max-height: 90vh;
+                border-radius: 16px;
+            }
+        }
+
+        .pd-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--glass-border);
+            flex-shrink: 0;
+        }
+
+        .pd-header-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pd-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            margin: -8px;
+            border-radius: 8px;
+            line-height: 1;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .pd-close-btn:hover {
+            background: var(--glass-strong);
+            color: #fff;
+        }
+
+        .pd-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 22px 32px;
+        }
+
+        .pd-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .pd-body::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+        }
+
+        .pd-loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+            color: var(--text-dim);
+            font-size: 13.5px;
+            gap: 12px;
+        }
+
+        .pd-spinner {
+            width: 26px;
+            height: 26px;
+            border: 2.5px solid var(--glass-border);
+            border-top-color: var(--accent-glow);
+            border-radius: 50%;
+            animation: pd-spin 0.8s linear infinite;
+        }
+
+        @keyframes pd-spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* --- Identity hero --- */
+        .pd-hero {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .pd-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(168, 175, 196, 0.32), rgba(212, 217, 230, 0.12));
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--accent-glow);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .pd-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .pd-hero-info h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 19px;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .pd-hero-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 5px;
+            flex-wrap: wrap;
+        }
+
+        .pd-id-chip {
+            font-size: 12px;
+            color: var(--accent-glow);
+            font-family: 'Space Grotesk', sans-serif;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            padding: 2px 8px;
+        }
+
+        .pd-status-pill {
+            font-size: 10.5px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            padding: 2.5px 9px;
+            border-radius: 100px;
+        }
+
+        .pd-status-pill.active {
+            background: rgba(52, 211, 153, 0.14);
+            color: var(--success);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+        }
+
+        .pd-status-pill.inactive {
+            background: rgba(244, 113, 113, 0.14);
+            color: #F87171;
+            border: 1px solid rgba(244, 113, 113, 0.3);
+        }
+
+        /* --- Section cards --- */
+        .pd-section {
+            margin-bottom: 22px;
+        }
+
+        .pd-section-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .pd-section-title .pd-edit-trigger {
+            text-transform: none;
+            letter-spacing: 0;
+            font-size: 12.5px;
+            font-weight: 500;
+            color: var(--accent-glow);
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+
+        .pd-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+        }
+
+        .pd-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px 20px;
+        }
+
+        .pd-field label {
+            font-size: 10.5px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .pd-field .pd-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+
+        .pd-field .pd-value.muted {
+            color: var(--text-muted);
+        }
+
+        .pd-field .pd-input {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 7px 9px;
+            color: #fff;
+            font-size: 13.5px;
+            width: 100%;
+            display: none;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 0.18s, background 0.18s;
+        }
+
+        .pd-field .pd-input:focus {
+            border-color: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .pd-field.full {
+            grid-column: 1 / -1;
+        }
+
+        .pd-weekly-off-setter {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 6px;
+        }
+
+        .pd-weekly-off-setter select {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: 7px;
+            padding: 6px 8px;
+            color: #fff;
+            font-size: 12.5px;
+            outline: none;
+        }
+
+        .pd-weekly-off-setter button {
+            font-size: 11.5px;
+            padding: 5px 11px;
+            white-space: nowrap;
+        }
+
+        .pd-footer {
+            display: none;
+            gap: 10px;
+            justify-content: flex-end;
+            padding: 16px 22px;
+            border-top: 1px solid var(--glass-border);
+            flex-shrink: 0;
+        }
+
+        .pd-footer.open {
+            display: flex;
+        }
+
+        .pd-error-state {
+            text-align: center;
+            color: var(--text-dim);
+            padding: 60px 20px;
+            font-size: 13.5px;
+        }
+
+        .pd-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 24px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .pd-tab {
+            flex: 1;
+            text-align: center;
+            padding: 8px 10px;
+            border-radius: 9px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-family: inherit;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .pd-tab.active {
+            background: var(--glass-strong);
+            color: var(--text-primary);
+        }
+
+        .pd-log-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .pd-log-row:last-child {
+            border-bottom: none;
+        }
+
+        .pd-log-date {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .pd-log-sub {
+            font-size: 11.5px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .pd-log-times {
+            display: flex;
+            gap: 14px;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .pd-attendance-table-wrap {
+            max-height: 420px;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+
+        .pd-attendance-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+        }
+
+        .pd-attendance-table thead th {
+            position: sticky;
+            top: 0;
+            background: #131826;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--glass-border);
+            white-space: nowrap;
+            z-index: 1;
+        }
+
+        .pd-attendance-table tbody td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .pd-attendance-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .pd-attendance-table tbody tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* ============================================================
+           ATTENDANCE — summary cards + month calendar + day popup
+           ============================================================ */
+        .pd-att-summary-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        @media (max-width: 560px) {
+            .pd-att-summary-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pd-att-summary-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            text-align: center;
+        }
+
+        .pd-att-summary-card label {
+            display: block;
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+
+        .pd-att-summary-card .pd-att-summary-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .pd-att-summary-card .pd-att-summary-sub {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        .pd-cal-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+        }
+
+        .pd-cal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .pd-cal-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .pd-cal-nav {
+            display: flex;
+            gap: 8px;
+        }
+
+        .pd-cal-nav-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .pd-cal-nav-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .pd-cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+
+        .pd-cal-daylabel {
+            text-align: center;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: var(--text-dim);
+            padding-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .pd-cal-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 700;
+            cursor: default;
+            color: var(--text-dim);
+            background: rgba(255, 255, 255, 0.02);
+            position: relative;
+        }
+
+        .pd-cal-cell.pd-cal-empty {
+            background: transparent;
+        }
+
+        .pd-cal-cell.pd-cal-present {
+            background: rgba(52, 211, 153, 0.16);
+            color: var(--success);
+            cursor: pointer;
+        }
+
+        .pd-cal-cell.pd-cal-present:hover {
+            background: rgba(52, 211, 153, 0.3);
+        }
+
+        .pd-cal-cell.pd-cal-weeklyoff {
+            background: rgba(168, 175, 196, 0.18);
+            color: var(--accent-glow);
+        }
+
+        .pd-cal-cell.pd-cal-weeklyoff.pd-cal-present {
+            background: linear-gradient(135deg, rgba(168, 175, 196, 0.25), rgba(52, 211, 153, 0.2));
+            color: var(--accent-glow);
+        }
+
+        .pd-cal-cell.pd-cal-today {
+            outline: 2px solid var(--accent-glow);
+            outline-offset: -2px;
+        }
+
+        /* Present but didn't follow the shift timing (late in / early out) */
+        .pd-cal-cell.pd-cal-irregular {
+            background: rgba(168, 85, 247, 0.18);
+            color: #C084FC;
+            cursor: pointer;
+        }
+
+        .pd-cal-cell.pd-cal-irregular:hover {
+            background: rgba(168, 85, 247, 0.32);
+        }
+
+        .pd-cal-cell.pd-cal-irregular.pd-cal-weeklyoff {
+            background: linear-gradient(135deg, rgba(168, 175, 196, 0.25), rgba(168, 85, 247, 0.22));
+        }
+
+        /* No attendance record on a working day that has already passed */
+        .pd-cal-cell.pd-cal-absent {
+            background: rgba(248, 113, 113, 0.16);
+            color: var(--error);
+        }
+
+        .pd-cal-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .pd-cal-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-dim);
+        }
+
+        .pd-cal-legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .pd-cal-legend-dot.present {
+            background: var(--success);
+        }
+
+        .pd-cal-legend-dot.irregular {
+            background: #C084FC;
+        }
+
+        .pd-cal-legend-dot.absent {
+            background: var(--error);
+        }
+
+        .pd-cal-legend-dot.weeklyoff {
+            background: var(--accent-glow);
+        }
+
+        .pd-day-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(6px);
+            z-index: 1300;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .pd-day-modal-overlay.open {
+            display: flex;
+        }
+
+        .pd-day-modal-card {
+            background: rgba(24, 24, 27, 0.9);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(28px) saturate(160%);
+            border-radius: var(--radius);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 340px;
+            padding: 20px;
+        }
+
+        .pd-day-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .pd-day-modal-header h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .pd-day-modal-close {
+            background: var(--error);
+            border: none;
+            color: #fff;
+            width: 26px;
+            height: 26px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pd-day-modal-row {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .pd-day-modal-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .pd-day-modal-row label {
+            display: block;
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+        }
+
+        .pd-day-modal-row .pd-day-modal-time {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .pd-day-modal-row.in-time .pd-day-modal-time {
+            color: var(--success);
+        }
+
+        .pd-day-modal-row.out-time .pd-day-modal-time {
+            color: #60A5FA;
+        }
+
+        .pd-day-modal-row.shift-time .pd-day-modal-time {
+            color: var(--accent-glow);
+            font-size: 16px;
+        }
+
+        /* Small "Admin-only" tag next to the Shift Timing card label */
+        .pd-admin-only-tag {
+            display: inline-block;
+            margin-left: 6px;
+            font-size: 9.5px;
+            font-weight: 600;
+            letter-spacing: 0;
+            text-transform: none;
+            color: var(--text-dim);
+            cursor: default;
+        }
+
+        /* Calendar cell marker for a day with an admin shift override —
+           a small dot in the corner, layered on top of whatever
+           present/absent/irregular colour the cell already has. */
+        .pd-cal-cell.pd-cal-hasshift::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-glow);
+        }
+
+        .pd-cal-legend-dot.hasshift {
+            background: var(--accent-glow);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar-spacer"></div>
+
+    <div class="main-workspace">
+        <div class="mobile-nav-bar" onclick="openSidebar()">☰ <span
+                style="font-size:14px; margin-left:12px; font-weight:600;">Menu</span></div>
+
+        <div class="header-block">
+            <div class="title-area">
+                <h1>👥 Employees Directory</h1>
+                <p>Manage all active and inactive records of the organization from here.</p>
+            </div>
+        </div>
+
+        <div class="quick-actions">
+            <a class="qa-btn" href="#" onclick="openAddEmployeeModal(); return false;">
+                <div class="qa-icon">➕</div>
+                <div class="qa-label">Add Employee</div>
+            </a>
+            <a class="qa-btn" href="attendance.html">
+                <div class="qa-icon">✅</div>
+                <div class="qa-label">Mark Attendance</div>
+            </a>
+            <a class="qa-btn" href="leaves.html">
+                <div class="qa-icon">📋</div>
+                <div class="qa-label">Leave Requests</div>
+            </a>
+            <a class="qa-btn" href="salaryslip.html">
+                <div class="qa-icon">🧾</div>
+                <div class="qa-label">Generate Slip</div>
+            </a>
+        </div>
+
+        <div class="filter-deck">
+            <input type="text" id="filterSearch" class="search-input-box" placeholder="Name, ID, or Email to search..."
+                oninput="triggerSearch()" />
+            <select id="filterBranch" class="dropdown-select" onchange="resetAndLoad()">
+                <option value="">All Branches</option>
+                <option value="BR001">Branch 1 (Nagpur Main)</option>
+                <option value="BR002">Branch 2 (Dharampeth)</option>
+            </select>
+            <select id="filterStatus" class="dropdown-select" onchange="resetAndLoad()">
+                <option value="active">Active Status</option>
+                <option value="inactive">Inactive Status</option>
+                <option value="">All Status Records</option>
+            </select>
+        </div>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Employee Name</th>
+                        <th>ID</th>
+                        <th>Branch</th>
+                        <th>Designation</th>
+                        <th>Mobile</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="employeeRowsContainer">
+                    <tr>
+                        <td colspan="7" style="padding: 32px; text-align: center; color: var(--text-dim);">Directory is
+                            loading... Please wait.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination-bar">
+            <div id="paginationInfo">Showing 0 of 0 employees</div>
+        </div>
+
+        <div id="scrollSentinel" class="scroll-sentinel">
+            <div class="scroll-spinner" id="scrollSpinner" style="display:none;"></div>
+            <span id="scrollSentinelText"></span>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="addEmployeeModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>➕ Add New Employee</h3>
+                <button
+                    style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer; padding:10px; margin:-10px; border-radius:8px; line-height:1;"
+                    onclick="toggleModal(false)">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="newEmployeeForm" onsubmit="submitEmployeeData(event)">
+                    <div class="form-grid">
+                        <div class="form-group"><label>Full Name *</label><input type="text" id="formName" required />
+                        </div>
+                        <div class="form-group"><label>Official Email *</label><input type="email" id="formEmail"
+                                required /></div>
+                        <div class="form-group"><label>Mobile Number *</label><input type="tel" id="formMobile"
+                                required /></div>
+                        <!-- 🎂 DOB [2026-09-27]: used by birthday notifications + ID card -->
+                        <div class="form-group"><label>Date of Birth</label><input type="date" id="formDob" /></div>
+                        <div class="form-group">
+                            <label>Branch Assignment *</label>
+                            <select id="formBranch" required>
+                                <option value="BR001">BR001 — Nagpur Main</option>
+                                <option value="BR002">BR002 — Dharampeth Office</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Department *</label>
+                            <select id="formDept" required>
+                                <option value="">Loading departments…</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Designation Role *</label>
+                            <select id="formDesignation" required>
+                                <option value="">Loading designations…</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Employment Nature</label>
+                            <select id="formEmpType">
+                                <option value="Full-time">Full-time Regular</option>
+                                <option value="Part-time">Part-time Contingent</option>
+                                <option value="Internship">Internship Training</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Salary Payment Type</label>
+                            <select id="formSalaryType">
+                                <option value="fixed">Fixed Structural Monthly</option>
+                                <option value="hourly">Hourly Billing Rate</option>
+                                <option value="commission">Commission Base Incentive</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Authentication Role</label>
+                            <select id="formUserRole">
+                                <option value="employee">Standard Employee Portal</option>
+                                <option value="hr">HR Executive Console</option>
+                                <option value="branch_manager">Branch Manager View</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Password</label><input type="text" id="formPassword"
+                                placeholder="Default: Emp@123" /></div>
+                        <div class="form-group" style="grid-column: 1 / -1;"><label>Residential Address</label><input
+                                type="text" id="formAddress" /></div>
+                    </div>
+                    <button type="submit" class="btn-action"
+                        style="width: 100%; justify-content: center; margin-top:20px;">Save & Provision Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div class="modal-overlay" id="qrModal" style="display:none; z-index:1100;">
+        <div class="modal-card" style="max-width:380px; text-align:center;">
+            <div class="modal-header" style="justify-content:space-between;">
+                <h3>🔲 Employee QR Card</h3>
+                <button
+                    style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;padding:10px;margin:-10px;border-radius:8px;line-height:1;"
+                    onclick="closeQrModal()">×</button>
+            </div>
+            <div style="padding:28px 24px;">
+                <div style="font-size:13px; color:var(--text-muted); margin-bottom:6px;" id="qrEmpName">—</div>
+                <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:20px;" id="qrEmpMeta">—</div>
+                <!-- QR Code rendered here -->
+                <div id="qrCodeCanvas" style="display:flex; justify-content:center; margin-bottom:20px;">
+                    <canvas id="qrActualCanvas" style="border-radius:12px; background:#fff; padding:12px;"></canvas>
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin-bottom:16px; line-height:1.6;">
+                    Yeh QR Attendance Console pe scan karo<br />Punch In / Punch Out automatically register hoga
+                </div>
+                <button onclick="downloadQrCard()"
+                    style="background:rgba(255,255,255,0.09);border:1px solid var(--glass-border);color:#fff;padding:9px 22px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:600;font-family:'Inter',sans-serif;width:100%;transition:background 0.18s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.09)'">
+                    ⬇️ QR Download Karo
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- ============================================================
+         PROFILE DRAWER — slide-in employee profile panel
+         ============================================================ -->
+    <div class="pd-day-modal-overlay" id="pdDayModalOverlay" onclick="closePdDayModal()">
+        <div class="pd-day-modal-card" onclick="event.stopPropagation()">
+            <div class="pd-day-modal-header">
+                <h3 id="pdDayModalTitle">—</h3>
+                <button type="button" class="pd-day-modal-close" onclick="closePdDayModal()">✕</button>
+            </div>
+            <div class="pd-day-modal-row in-time">
+                <label>In-Time</label>
+                <div class="pd-day-modal-time" id="pdDayModalIn">—</div>
+            </div>
+            <div class="pd-day-modal-row out-time">
+                <label>Out-Time</label>
+                <div class="pd-day-modal-time" id="pdDayModalOut">—</div>
+            </div>
+            <div class="pd-day-modal-row shift-time" id="pdDayModalShiftRow">
+                <label>Shift Assigned (by Admin)</label>
+                <div class="pd-day-modal-time" id="pdDayModalShift">—</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-drawer-overlay" id="profileDrawerOverlay" onclick="closeProfileDrawer()"></div>
+    <div class="profile-drawer-panel" id="profileDrawerPanel">
+        <div class="pd-header">
+            <div class="pd-header-title">👤 Employee Profile</div>
+            <button class="pd-close-btn" onclick="closeProfileDrawer()">×</button>
+        </div>
+        <div class="pd-body" id="pdBody">
+            <div class="pd-loading-state">
+                <div class="pd-spinner"></div>
+                Loading profile…
+            </div>
+        </div>
+        <div class="pd-footer" id="pdFooter">
+            <button type="button" class="btn-secondary" onclick="setProfileEditMode(false)">Cancel</button>
+            <button type="button" class="btn-action" onclick="saveProfileChanges()"
+                style="background: linear-gradient(135deg, #34D399 0%, #059669 100%); border: none;">Save
+                Changes</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // ── QR Modal Logic ──────────────────────────────────
+        let currentQrEmpId = '';
+        let currentQrEmpName = '';
+
+        function showQrModal(empId, empName, branchId) {
+            currentQrEmpId = empId;
+            currentQrEmpName = empName;
+            document.getElementById('qrEmpName').textContent = empName;
+            document.getElementById('qrEmpMeta').textContent = empId + (branchId ? ' · ' + branchId : '');
+            document.getElementById('qrModal').style.display = 'flex';
+
+            const container = document.getElementById('qrCodeCanvas');
+            container.innerHTML = '';
+
+            new QRCode(container, {
+                text: `EBMS:${empId}:${empName}`,
+                width: 200, height: 200,
+                colorDark: '#000000', colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        function closeQrModal() {
+            document.getElementById('qrModal').style.display = 'none';
+        }
+
+        function downloadQrCard() {
+            const container = document.getElementById('qrCodeCanvas');
+            const img = container.querySelector('img') || container.querySelector('canvas');
+            if (!img) { showToast('QR generate ho raha hai, thoda wait karo.'); return; }
+
+            const dlCanvas = document.createElement('canvas');
+            dlCanvas.width = 300; dlCanvas.height = 360;
+            const ctx = dlCanvas.getContext('2d');
+
+            ctx.fillStyle = '#111113';
+            ctx.fillRect(0, 0, 300, 360);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(50, 40, 200, 200);
+
+            const drawQR = () => {
+                ctx.drawImage(img, 50, 40, 200, 200);
+                ctx.fillStyle = '#F4F4F5';
+                ctx.font = 'bold 16px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(currentQrEmpName, 150, 278);
+                ctx.fillStyle = '#A1A1AA';
+                ctx.font = '13px sans-serif';
+                ctx.fillText(currentQrEmpId, 150, 300);
+                ctx.fillStyle = '#52525B';
+                ctx.font = '11px sans-serif';
+                ctx.fillText('Codeline.AI EBMS · Attendance QR', 150, 340);
+                const link = document.createElement('a');
+                link.download = `QR_${currentQrEmpId}.png`;
+                link.href = dlCanvas.toDataURL('image/png');
+                link.click();
+            };
+
+            if (img.tagName === 'IMG' && !img.complete) { img.onload = drawQR; } else { drawQR(); }
+        }
+
+        // ── Main App ─────────────────────────────────────────
+        AppSession.protect();
+        const SESSION_TOKEN_VERIFIER = AppSession.getToken();
+
+        let CURRENT_PAGE_TRACKER = 1;
+        let TOTAL_PAGES_LIMIT = 1;
+        let DEBOUNCE_TIMER_HOOK;
+        let IS_LOADING_PAGE = false;
+        let LOADED_EMPLOYEE_COUNT = 0;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadEmployeesData();
+            setupInfiniteScroll();
+        });
+
+        window.addEventListener('resize', () => {
+            clearTimeout(window._resizeLoadCheck);
+            window._resizeLoadCheck = setTimeout(checkAndLoadMoreIfNeeded, 250);
+        });
+
+        function setupInfiniteScroll() {
+            const sentinel = document.getElementById('scrollSentinel');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !IS_LOADING_PAGE && CURRENT_PAGE_TRACKER < TOTAL_PAGES_LIMIT) {
+                        CURRENT_PAGE_TRACKER += 1;
+                        loadEmployeesData({ append: true });
+                    }
+                });
+            }, { rootMargin: '200px' });
+            observer.observe(sentinel);
+        }
+
+        function checkAndLoadMoreIfNeeded() {
+            if (IS_LOADING_PAGE) return;
+            if (CURRENT_PAGE_TRACKER >= TOTAL_PAGES_LIMIT) return;
+            // No scrollbar yet on the page -> the sentinel is already sitting
+            // inside the viewport, so a scroll event will never fire on its
+            // own. Keep pulling pages until the list is tall enough to scroll,
+            // or until every page has been loaded.
+            const noScrollbarYet = document.documentElement.scrollHeight <= window.innerHeight + 4;
+            if (noScrollbarYet) {
+                CURRENT_PAGE_TRACKER += 1;
+                loadEmployeesData({ append: true });
+            }
+        }
+
+        function toggleModal(isVisible) {
+            document.getElementById('addEmployeeModal').style.display = isVisible ? 'flex' : 'none';
+            if (!isVisible) document.getElementById('newEmployeeForm').reset();
+        }
+
+        // ✅ Add-Employee Department / Designation dropdowns used to be a
+        // hardcoded, out-of-sync <option> list. They now load live from
+        // the 'departments' / 'designations' sheets every time the modal
+        // opens, so whatever gets added there (via addDepartment /
+        // addDesignation) shows up here automatically.
+        let addEmpLookupsCache = null; // { departments: [...], designations: [...] }
+
+        function fillPlainSelect(selectEl, items, valueKey, labelFn, placeholderText) {
+            const current = selectEl.value;
+            selectEl.innerHTML = `<option value="">${placeholderText}</option>` +
+                items.map(it => `<option value="${it[valueKey]}">${labelFn(it)}</option>`).join('');
+            if (current && items.some(it => String(it[valueKey]) === String(current))) {
+                selectEl.value = current;
+            }
+        }
+
+        async function openAddEmployeeModal() {
+            toggleModal(true);
+
+            const deptSelect = document.getElementById('formDept');
+            const desigSelect = document.getElementById('formDesignation');
+
+            if (addEmpLookupsCache) {
+                fillPlainSelect(deptSelect, addEmpLookupsCache.departments, 'dept_id',
+                    d => d.dept_name || d.dept_id, 'Select department…');
+                fillPlainSelect(desigSelect, addEmpLookupsCache.designations, 'desig_id',
+                    d => d.desig_name || d.desig_id, 'Select designation…');
+                return;
+            }
+            deptSelect.innerHTML = '<option value="">Loading departments…</option>';
+            desigSelect.innerHTML = '<option value="">Loading designations…</option>';
+
+            try {
+                const [deptRes, desigRes] = await Promise.all([
+                    fetch(`${API_URL}?action=getDepartments&token=${SESSION_TOKEN_VERIFIER}`),
+                    fetch(`${API_URL}?action=getDesignations&token=${SESSION_TOKEN_VERIFIER}`)
+                ]);
+                const [deptPayload, desigPayload] = await Promise.all([deptRes.json(), desigRes.json()]);
+
+                const departments = deptPayload.status === 'success' ? (deptPayload.data || []) : [];
+                const designations = desigPayload.status === 'success' ? (desigPayload.data || []) : [];
+
+                addEmpLookupsCache = { departments, designations };
+
+                fillPlainSelect(deptSelect, departments, 'dept_id',
+                    d => d.dept_name || d.dept_id, 'Select department…');
+                fillPlainSelect(desigSelect, designations, 'desig_id',
+                    d => d.desig_name || d.desig_id, 'Select designation…');
+            } catch (e) {
+                deptSelect.innerHTML = '<option value="">Could not load — try again</option>';
+                desigSelect.innerHTML = '<option value="">Could not load — try again</option>';
+            }
+        }
+
+        function triggerSearch() {
+            clearTimeout(DEBOUNCE_TIMER_HOOK);
+            DEBOUNCE_TIMER_HOOK = setTimeout(() => { resetAndLoad(); }, 400);
+        }
+
+        function resetAndLoad() {
+            CURRENT_PAGE_TRACKER = 1;
+            TOTAL_PAGES_LIMIT = 1;
+            loadEmployeesData();
+        }
+
+        async function loadEmployeesData(opts = {}) {
+            const append = !!opts.append;
+            const searchVal = encodeURIComponent(document.getElementById('filterSearch').value);
+            const branchVal = document.getElementById('filterBranch').value;
+            const statusVal = document.getElementById('filterStatus').value;
+
+            const TARGET_API_URL_CONSTRUCT = `${API_URL}?action=getEmployees&token=${SESSION_TOKEN_VERIFIER}&page=${CURRENT_PAGE_TRACKER}&limit=10&search=${searchVal}&branch_id=${branchVal}&status=${statusVal}`;
+
+            IS_LOADING_PAGE = true;
+            setSentinelState(append ? 'loading' : 'hidden');
+            if (!append) {
+                document.getElementById('employeeRowsContainer').innerHTML =
+                    `<tr><td colspan="7" style="padding: 32px; text-align: center; color: var(--text-dim);">Directory is loading... Please wait.</td></tr>`;
+            }
+
+            try {
+                const res = await fetch(TARGET_API_URL_CONSTRUCT);
+                const payload = await res.json();
+
+                if (payload.status === 'success') {
+                    renderDataMatrixRows(payload.data.data, append);
+                    adjustPaginationUINode(payload.data, append);
+                } else {
+                    showToast(payload.message || 'Error executing request dataset.');
+                    if (append) CURRENT_PAGE_TRACKER -= 1; // allow retry on next scroll
+                }
+            } catch (err) {
+                showToast('Critical interface connection fallback.');
+                if (append) CURRENT_PAGE_TRACKER -= 1;
+            } finally {
+                IS_LOADING_PAGE = false;
+            }
+        }
+
+        function setSentinelState(state) {
+            const spinner = document.getElementById('scrollSpinner');
+            const text = document.getElementById('scrollSentinelText');
+            if (state === 'loading') {
+                spinner.style.display = '';
+                text.textContent = 'Loading more employees…';
+            } else if (state === 'done') {
+                spinner.style.display = 'none';
+                text.textContent = 'All employees loaded';
+            } else {
+                spinner.style.display = 'none';
+                text.textContent = '';
+            }
+        }
+
+        function renderDataMatrixRows(recordsArray, append = false) {
+            const container = document.getElementById('employeeRowsContainer');
+            if (!recordsArray || recordsArray.length === 0) {
+                if (!append) {
+                    container.innerHTML = `<tr><td colspan="7" style="padding: 24px; text-align: center; color: var(--text-dim);">No active matching logs found.</td></tr>`;
+                }
+                return;
+            }
+
+            const rowsHtml = recordsArray.map(emp => {
+                const initials = emp.name ? emp.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'EE';
+                return `
+        <tr>
+          <td>
+            <div class="identity-badge">
+              <div class="avatar-placeholder">${initials}</div>
+              <div><div style="font-weight:600;">${emp.name}</div><div style="font-size:12px; color:var(--text-muted);">${emp.email}</div></div>
+            </div>
+          </td>
+          <td><code style="color:var(--accent-glow);">${emp.emp_id}</code></td>
+          <td>${emp.branch_name || emp.branch_id || '—'}</td>
+          <td>${emp.designation_name || emp.designation_id || 'Staff Regular'}</td>
+          <td>${emp.mobile || '—'}</td>
+          <td><span class="status-pill ${emp.status === 'active' ? 'pill-active' : 'pill-inactive'}">${emp.status === 'active' ? 'Active' : 'Inactive'}</span></td>
+          <td><a class="link-profile" href="javascript:void(0)" onclick="openProfileDrawer('${emp.emp_id}')">View Profile →</a>
+            &nbsp;
+            <button onclick="showQrModal('${emp.emp_id}','${emp.name.replace(/'/g, "\\'")}','${emp.branch_id || ''}')" style="background:rgba(52,211,153,0.10);border:1px solid rgba(52,211,153,0.22);color:#6EE7B7;padding:6px 12px;border-radius:7px;cursor:pointer;font-size:12px;font-family:'Inter',sans-serif;white-space:nowrap;">🔲 QR</button>
+          </td>
+        </tr>
+      `;
+            }).join('');
+
+            if (append) {
+                container.insertAdjacentHTML('beforeend', rowsHtml);
+            } else {
+                container.innerHTML = rowsHtml;
+            }
+        }
+
+        function adjustPaginationUINode(pag, append = false) {
+            CURRENT_PAGE_TRACKER = pag.page;
+            TOTAL_PAGES_LIMIT = pag.totalPages;
+            LOADED_EMPLOYEE_COUNT = append
+                ? LOADED_EMPLOYEE_COUNT + (pag.data ? pag.data.length : 0)
+                : (pag.data ? pag.data.length : 0);
+            document.getElementById('paginationInfo').textContent =
+                `Showing ${LOADED_EMPLOYEE_COUNT} of ${pag.total} employees`;
+
+            if (CURRENT_PAGE_TRACKER >= TOTAL_PAGES_LIMIT) {
+                setSentinelState(LOADED_EMPLOYEE_COUNT > 0 ? 'done' : 'hidden');
+            } else {
+                setSentinelState('hidden');
+                // If the page doesn't scroll yet (short list, big screen), the
+                // sentinel is already visible and a real scroll event will never
+                // fire to trigger the next load. Proactively fetch the next
+                // page in that case until either the list overflows the
+                // viewport (so genuine scrolling takes over) or data runs out.
+                requestAnimationFrame(checkAndLoadMoreIfNeeded);
+            }
+        }
+
+        async function submitEmployeeData(e) {
+            e.preventDefault();
+            const payload = {
+                token: SESSION_TOKEN_VERIFIER,
+                action: 'addEmployee',
+                name: document.getElementById('formName').value,
+                email: document.getElementById('formEmail').value,
+                mobile: document.getElementById('formMobile').value,
+                dob: document.getElementById('formDob').value,   // 🎂 NEW
+                branch_id: document.getElementById('formBranch').value,
+                department_id: document.getElementById('formDept').value,
+                designation_id: document.getElementById('formDesignation').value,
+                employment_type: document.getElementById('formEmpType').value,
+                salary_type: document.getElementById('formSalaryType').value,
+                role: document.getElementById('formUserRole').value,
+                password: document.getElementById('formPassword').value || 'Emp@123',
+                address: document.getElementById('formAddress').value
+            };
+
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const out = await res.json();
+                if (out.status === 'success') {
+                    showToast('Employee added successfully!');
+                    toggleModal(false);
+                    loadEmployeesData();
+                } else {
+                    showToast(out.message || 'Error executing records injection.');
+                }
+            } catch (err) {
+                showToast('Network error updating architecture stream.');
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // PROFILE DRAWER — slide-in panel replacing employee_profile.html
+        // ════════════════════════════════════════════════════════════
+        let pdCurrentEmpId = null;
+        let pdCacheData = null;
+        let pdDepartmentsMap = {};
+        let pdDesignationsMap = {};
+        let pdShiftTemplatesList = [];
+        let pdShiftTemplatesMap = {};
+        let pdLookupsLoaded = false;
+        let pdActiveTab = 'profile';
+        let pdAttendanceLoaded = false;
+        let pdAttendanceCache = [];
+        let pdTasksLoaded = false;
+        let pdTasksCache = [];
+        // Shift roster (assigned by admin from shifts.html) — read-only here.
+        let pdShiftRosterLoaded = false;
+        let pdShiftRosterCache = [];
+
+        function openProfileDrawer(empId) {
+            pdCurrentEmpId = empId;
+            pdActiveTab = 'profile';
+            pdAttendanceLoaded = false;
+            pdTasksLoaded = false;
+            pdShiftRosterLoaded = false;
+            pdShiftRosterCache = [];
+            pdCalYear = null;
+            pdCalMonth = null;
+            document.getElementById('profileDrawerOverlay').classList.add('open');
+            document.getElementById('profileDrawerPanel').classList.add('open');
+            document.getElementById('pdFooter').classList.remove('open');
+            document.getElementById('pdBody').innerHTML = `
+                <div class="pd-loading-state">
+                    <div class="pd-spinner"></div>
+                    Loading profile…
+                </div>`;
+            document.body.style.overflow = 'hidden';
+
+            if (!pdLookupsLoaded) loadProfileLookups();
+            fetchEmployeeProfile(empId);
+        }
+
+        function closeProfileDrawer() {
+            document.getElementById('profileDrawerOverlay').classList.remove('open');
+            document.getElementById('profileDrawerPanel').classList.remove('open');
+            document.getElementById('pdFooter').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (document.getElementById('pdDayModalOverlay').classList.contains('open')) {
+                closePdDayModal();
+                return;
+            }
+            if (document.getElementById('profileDrawerPanel').classList.contains('open')) {
+                closeProfileDrawer();
+            }
+        });
+
+        async function loadProfileLookups() {
+            try {
+                const [deptRes, desigRes, shiftRes] = await Promise.all([
+                    fetch(`${API_URL}?action=getDepartments&token=${SESSION_TOKEN_VERIFIER}`),
+                    fetch(`${API_URL}?action=getDesignations&token=${SESSION_TOKEN_VERIFIER}`),
+                    fetch(`${API_URL}?action=getShifts&token=${SESSION_TOKEN_VERIFIER}`)
+                ]);
+                const deptPayload = await deptRes.json();
+                const desigPayload = await desigRes.json();
+                const shiftPayload = await shiftRes.json();
+
+                if (deptPayload.status === 'success') {
+                    (deptPayload.data || []).forEach(d => {
+                        pdDepartmentsMap[d.department_id] = d.name || d.department_name || d.department_id;
+                    });
+                }
+                if (desigPayload.status === 'success') {
+                    (desigPayload.data || []).forEach(d => {
+                        pdDesignationsMap[d.designation_id] = d.name || d.designation_name || d.designation_id;
+                    });
+                }
+                if (shiftPayload.status === 'success') {
+                    pdShiftTemplatesList = shiftPayload.data || [];
+                    pdShiftTemplatesMap = {};
+                    pdShiftTemplatesList.forEach(s => { pdShiftTemplatesMap[s.shift_id] = s; });
+                }
+                pdLookupsLoaded = true;
+                if (pdCacheData) renderProfileDrawer(pdCacheData);
+            } catch (e) { /* non-critical — fields just fall back to raw IDs */ }
+        }
+
+        async function fetchEmployeeProfile(empId) {
+            try {
+                const res = await fetch(`${API_URL}?action=getEmployee&token=${SESSION_TOKEN_VERIFIER}&emp_id=${empId}`);
+                const payload = await res.json();
+                if (payload.status === 'success') {
+                    pdCacheData = payload.data;
+                    renderProfileDrawer(pdCacheData);
+                } else {
+                    document.getElementById('pdBody').innerHTML = `<div class="pd-error-state">${payload.message || 'Could not load this profile.'}</div>`;
+                }
+            } catch (e) {
+                document.getElementById('pdBody').innerHTML = `<div class="pd-error-state">Connection error — please try again.</div>`;
+            }
+        }
+
+        function pdFormatJoiningDate(value) {
+            if (!value) return '—';
+            const d = new Date(value);
+            if (isNaN(d.getTime())) return String(value);
+            return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        // 🎂 NEW [2026-09-27]: Converts a "dd-MM-yyyy" string (backend's
+        // formatDateOnly output) to "yyyy-MM-dd" — what <input type="date">
+        // needs for its value. Already-ISO values pass through unchanged;
+        // unparseable values return '' (blank input rather than "Invalid Date").
+        function pdToIsoDate(value) {
+            if (!value) return '';
+            const s = String(value).trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // already ISO
+            const m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+            if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+            return '';
+        }
+
+        // Human-readable label for an employee's standard/default shift —
+        // this is the one "proper" shift assigned to them (Morning/
+        // Afternoon/Evening etc., from shifts.html templates), not a
+        // date-specific override. Only Admin/HR can set this.
+        function pdShiftLabel(defaultShiftId) {
+            if (!defaultShiftId) return 'Not set';
+            const tmpl = pdShiftTemplatesMap[defaultShiftId];
+            if (!tmpl) return 'Not set';
+            return `${tmpl.shift_name} (${tmpl.start_time || '—'}–${tmpl.end_time || '—'})`;
+        }
+
+        function renderProfileDrawer(node) {
+            const initials = (node.name || '?').trim().split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase();
+            const isActive = String(node.status).toLowerCase() === 'active';
+            const deptLabel = pdDepartmentsMap[node.department_id] || node.department_id || '—';
+            const desigLabel = pdDesignationsMap[node.designation_id] || node.designation_id || 'Staff Regular';
+
+            const sessionUser = AppSession.getUser();
+            const isOwnProfile = sessionUser && sessionUser.employee_id === node.emp_id;
+            const weeklyOffUnset = !node.weekly_off || String(node.weekly_off).trim() === '';
+            const showWeeklyOffSetter = isOwnProfile && weeklyOffUnset;
+
+            document.getElementById('pdBody').innerHTML = `
+                <div class="pd-hero">
+                    <div class="pd-avatar">${node.photo_url ? `<img src="${node.photo_url}" alt="${node.name}" />` : initials || '?'}</div>
+                    <div class="pd-hero-info">
+                        <h2>${node.name || '—'}</h2>
+                        <div class="pd-hero-meta">
+                            <span class="pd-id-chip">${node.emp_id}</span>
+                            <span class="pd-status-pill ${isActive ? 'active' : 'inactive'}">${node.status || '—'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pd-tabs">
+                    <button type="button" class="pd-tab active" data-tab="profile" onclick="switchPdTab('profile')">📋 Profile</button>
+                    <button type="button" class="pd-tab" data-tab="attendance" onclick="switchPdTab('attendance')">🕐 Attendance</button>
+                    <button type="button" class="pd-tab" data-tab="tasks" onclick="switchPdTab('tasks')">✅ Tasks</button>
+                </div>
+
+                <div id="pdTabProfile">
+                    <div class="pd-section">
+                        <div class="pd-section-title">🔒 Identity &amp; Records</div>
+                        <div class="pd-card">
+                            <div class="pd-grid">
+                                <div class="pd-field"><label>Email</label><div class="pd-value muted">${node.email || '—'}</div></div>
+                                <div class="pd-field"><label>Joining Date</label><div class="pd-value muted">${pdFormatJoiningDate(node.joining_date)}</div></div>
+                                <div class="pd-field"><label>Aadhaar Number</label><div class="pd-value muted">${node.aadhaar || '—'}</div></div>
+                                <div class="pd-field"><label>PAN Number</label><div class="pd-value muted">${node.pan || '—'}</div></div>
+                                <div class="pd-field full">
+                                    <label>Weekly Off</label>
+                                    <div class="pd-value muted">${node.weekly_off || 'Not set'}</div>
+                                    ${showWeeklyOffSetter ? `
+                                    <div class="pd-weekly-off-setter">
+                                        <select id="pdWeeklyOffSelect">
+                                            <option value="Sunday">Sunday</option>
+                                            <option value="Monday">Monday</option>
+                                            <option value="Tuesday">Tuesday</option>
+                                            <option value="Wednesday">Wednesday</option>
+                                            <option value="Thursday">Thursday</option>
+                                            <option value="Friday">Friday</option>
+                                            <option value="Saturday">Saturday</option>
+                                        </select>
+                                        <button type="button" class="btn-secondary" onclick="setMyWeeklyOffDrawer()">Set (one-time)</button>
+                                    </div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pd-section">
+                        <div class="pd-section-title">
+                            Role &amp; Contact Details
+                            <button type="button" class="pd-edit-trigger" id="pdEditTrigger" onclick="setProfileEditMode(true)">✏️ Edit</button>
+                        </div>
+                        <div class="pd-card">
+                            <div class="pd-grid">
+                                <div class="pd-field">
+                                    <label>Branch Code</label>
+                                    <div class="pd-value" id="pdLblBranch">${node.branch_id || '—'}</div>
+                                    <input type="text" id="pdInputBranch" class="pd-input" value="${node.branch_id || ''}" />
+                                </div>
+                                <div class="pd-field">
+                                    <label>Department</label>
+                                    <div class="pd-value" id="pdLblDepartment">${deptLabel}</div>
+                                    <input type="text" id="pdInputDepartment" class="pd-input" value="${node.department_id || ''}" />
+                                </div>
+                                <div class="pd-field">
+                                    <label>Designation</label>
+                                    <div class="pd-value" id="pdLblDesignation">${desigLabel}</div>
+                                    <input type="text" id="pdInputDesignation" class="pd-input" value="${node.designation_id || ''}" />
+                                </div>
+                                <div class="pd-field">
+                                    <label>Employment Type</label>
+                                    <div class="pd-value" id="pdLblEmploymentType">${node.employment_type || 'Full-time'}</div>
+                                    <select id="pdInputEmploymentType" class="pd-input">
+                                        <option value="Full-time">Full-time</option>
+                                        <option value="Part-time">Part-time</option>
+                                        <option value="Contract">Contract</option>
+                                        <option value="Intern">Intern</option>
+                                    </select>
+                                </div>
+                                <div class="pd-field">
+                                    <label>Shift <span class="pd-admin-only-tag" title="This is the employee's regular/standard shift — set by Admin/HR here">🔒 Admin-only</span></label>
+                                    <div class="pd-value" id="pdLblShift">${pdShiftLabel(node.default_shift_id)}</div>
+                                    <select id="pdInputShift" class="pd-input">
+                                        <option value="">Not set</option>
+                                        ${pdShiftTemplatesList.map(s => `<option value="${s.shift_id}" ${String(node.default_shift_id) === String(s.shift_id) ? 'selected' : ''}>${s.shift_name} (${s.start_time || '—'}–${s.end_time || '—'})</option>`).join('')}
+                                    </select>
+                                </div>
+                                <!-- 🎂 DOB [2026-09-27]: editable from the profile drawer -->
+                                <div class="pd-field">
+                                    <label>Date of Birth</label>
+                                    <div class="pd-value" id="pdLblDob">${node.dob ? pdFormatJoiningDate(node.dob) : '—'}</div>
+                                    <input type="date" id="pdInputDob" class="pd-input" value="${node.dob ? pdToIsoDate(node.dob) : ''}" />
+                                </div>
+                                <div class="pd-field full">
+                                    <label>Mobile</label>
+                                    <div class="pd-value" id="pdLblMobile">${node.mobile || '—'}</div>
+                                    <input type="tel" id="pdInputMobile" class="pd-input" value="${node.mobile || ''}" />
+                                </div>
+                                <div class="pd-field full">
+                                    <label>Residential Address</label>
+                                    <div class="pd-value" id="pdLblAddress">${node.address || '—'}</div>
+                                    <input type="text" id="pdInputAddress" class="pd-input" value="${node.address || ''}" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="pdTabAttendance" style="display:none;">
+                    <div class="pd-loading-state"><div class="pd-spinner"></div>Loading attendance…</div>
+                </div>
+
+                <div id="pdTabTasks" style="display:none;">
+                    <div class="pd-loading-state"><div class="pd-spinner"></div>Loading tasks…</div>
+                </div>
+            `;
+            document.getElementById('pdInputEmploymentType').value = node.employment_type || 'Full-time';
+            // Initial paint is always in "view" mode — toggle visibility directly
+            // here instead of calling setProfileEditMode(false), which would
+            // re-render and recurse.
+            document.querySelectorAll('#pdTabProfile .pd-value').forEach(n => n.style.display = 'block');
+            document.querySelectorAll('#pdTabProfile .pd-input').forEach(n => n.style.display = 'none');
+            document.getElementById('pdFooter').classList.remove('open');
+
+            // Re-rendering (e.g. after Save) always lands back on the Profile
+            // tab — reset the tab bar + cached attendance/tasks state so a
+            // fresh open re-fetches rather than showing stale data.
+            pdActiveTab = 'profile';
+            pdAttendanceLoaded = false;
+            pdTasksLoaded = false;
+        }
+
+        function setProfileEditMode(on) {
+            document.querySelectorAll('#pdTabProfile .pd-value').forEach(n => n.style.display = on ? 'none' : 'block');
+            document.querySelectorAll('#pdTabProfile .pd-input').forEach(n => n.style.display = on ? 'block' : 'none');
+            document.getElementById('pdFooter').classList.toggle('open', on);
+            const trigger = document.getElementById('pdEditTrigger');
+            if (trigger) trigger.style.visibility = on ? 'hidden' : 'visible';
+            // Cancelling an edit: discard unsaved changes by re-rendering from cache
+            if (!on && pdCacheData) renderProfileDrawer(pdCacheData);
+        }
+
+        async function saveProfileChanges() {
+            const payload = {
+                token: SESSION_TOKEN_VERIFIER, action: 'updateEmployee', emp_id: pdCurrentEmpId,
+                branch_id: document.getElementById('pdInputBranch').value,
+                department_id: document.getElementById('pdInputDepartment').value,
+                designation_id: document.getElementById('pdInputDesignation').value,
+                employment_type: document.getElementById('pdInputEmploymentType').value,
+                default_shift_id: document.getElementById('pdInputShift').value,
+                dob: document.getElementById('pdInputDob').value,          // 🎂 NEW
+                mobile: document.getElementById('pdInputMobile').value,
+                address: document.getElementById('pdInputAddress').value
+            };
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const out = await res.json();
+                if (out.status === 'success') {
+                    showToast('Profile updated successfully!');
+                    fetchEmployeeProfile(pdCurrentEmpId);
+                    loadEmployeesData();
+                } else {
+                    showToast(out.message || 'Could not save changes.');
+                }
+            } catch (err) { showToast('Sync error — please try again.'); }
+        }
+
+        async function setMyWeeklyOffDrawer() {
+            const day = document.getElementById('pdWeeklyOffSelect').value;
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ token: SESSION_TOKEN_VERIFIER, action: 'setMyWeeklyOff', weekly_off: day })
+                });
+                const out = await res.json();
+                if (out.status === 'success') {
+                    showToast('Weekly off set: ' + day);
+                    fetchEmployeeProfile(pdCurrentEmpId);
+                } else {
+                    showToast(out.message || 'Could not set weekly off.');
+                }
+            } catch (err) { showToast('Sync error.'); }
+        }
+
+        // ── Profile Drawer Tabs — Profile / Attendance / Tasks ─────────
+        function switchPdTab(tab) {
+            // If mid-edit on the Profile tab, cancel that edit first — this
+            // re-renders the whole drawer from cache and resets to the
+            // 'profile' tab, so we apply the requested tab after it settles.
+            const wasEditing = document.getElementById('pdFooter').classList.contains('open');
+            if (wasEditing) setProfileEditMode(false);
+
+            pdActiveTab = tab;
+            document.querySelectorAll('.pd-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+            document.getElementById('pdTabProfile').style.display = tab === 'profile' ? 'block' : 'none';
+            document.getElementById('pdTabAttendance').style.display = tab === 'attendance' ? 'block' : 'none';
+            document.getElementById('pdTabTasks').style.display = tab === 'tasks' ? 'block' : 'none';
+
+            if (tab === 'attendance' && !pdAttendanceLoaded) fetchPdAttendance(pdCurrentEmpId);
+            if (tab === 'tasks' && !pdTasksLoaded) fetchPdTasks(pdCurrentEmpId);
+        }
+
+        // ⚠️ SHEET FORMAT UPDATE: the 'attendance' sheet no longer stores
+        // emp_id (or att_id/branch_id/method/late_minutes/status/remarks) —
+        // it's just Name | Phone | Email | Date | In-Time | Out-Time now,
+        // and handleGetAttendance() only knows how to filter by ?email=
+        // (see appscript_attendance.gs). So we resolve+pass the employee's
+        // email from the cached profile instead of emp_id.
+        // Returns "yyyy-MM-dd" for a JS Date, in local time (matches what
+        // getShiftRoster's from_date/to_date params expect).
+        function pdIsoDate(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${dd}`;
+        }
+
+        // Shift roster is admin-assigned only (shifts.html, super_admin-locked
+        // on the backend) — this profile drawer only ever READS it, never
+        // writes it. Range: 6 months back to 6 months ahead of today, so both
+        // past history and any future-dated assignments show up without
+        // needing a refetch on every calendar month navigation.
+        async function fetchPdShiftRoster(empId) {
+            const now = new Date();
+            const from = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+            const to = new Date(now.getFullYear(), now.getMonth() + 7, 0);
+            try {
+                const res = await fetch(`${API_URL}?action=getShiftRoster&token=${SESSION_TOKEN_VERIFIER}&emp_id=${encodeURIComponent(empId)}&from_date=${pdIsoDate(from)}&to_date=${pdIsoDate(to)}`);
+                const payload = await res.json();
+                if (payload.status === 'success') {
+                    pdShiftRosterCache = payload.data || [];
+                } else {
+                    pdShiftRosterCache = [];
+                }
+            } catch (err) {
+                pdShiftRosterCache = [];
+            } finally {
+                pdShiftRosterLoaded = true;
+            }
+        }
+
+        async function fetchPdAttendance(empId) {
+            const body = document.getElementById('pdTabAttendance');
+            body.innerHTML = `<div class="pd-loading-state"><div class="pd-spinner"></div>Loading attendance…</div>`;
+            const email = (pdCacheData && pdCacheData.email) ? pdCacheData.email : '';
+            if (!email) {
+                body.innerHTML = `<div class="pd-error-state">This profile has no email on file, so attendance can't be looked up.</div>`;
+                return;
+            }
+            try {
+                const [attRes] = await Promise.all([
+                    fetch(`${API_URL}?action=getAttendance&token=${SESSION_TOKEN_VERIFIER}&email=${encodeURIComponent(email)}&limit=90`),
+                    fetchPdShiftRoster(empId)
+                ]);
+                const payload = await attRes.json();
+                if (payload.status === 'success') {
+                    pdAttendanceLoaded = true;
+                    pdAttendanceCache = (payload.data && payload.data.data) || [];
+                    renderPdAttendance(pdAttendanceCache);
+                } else {
+                    body.innerHTML = `<div class="pd-error-state">${payload.message || 'Could not load attendance.'}</div>`;
+                }
+            } catch (err) {
+                body.innerHTML = `<div class="pd-error-state">Connection error — please try again.</div>`;
+            }
+        }
+
+        // ⚠️ SHEET FORMAT UPDATE: attendance rows are now just
+        // { Name, Phone, Email, Date, In-Time, Out-Time } — no more
+        // att_id/status/method/late_minutes/remarks. Date/In-Time/Out-Time
+        // arrive pre-formatted as plain strings ("dd-MM-yyyy" / "HH:mm")
+        // from formatDateOnly()/formatTimeOnly() on the backend, so they
+        // can be rendered as-is without re-parsing as JS Date objects.
+        // "Status" and "Hours Worked" are now derived client-side instead
+        // of being stored columns.
+        function pdCalcHours(inTime, outTime) {
+            if (!inTime || !outTime) return '—';
+            const [ih, im] = String(inTime).split(':').map(Number);
+            const [oh, om] = String(outTime).split(':').map(Number);
+            if ([ih, im, oh, om].some(n => isNaN(n))) return '—';
+            let mins = (oh * 60 + om) - (ih * 60 + im);
+            if (mins < 0) mins += 24 * 60; // out-time past midnight
+            const h = Math.floor(mins / 60), m = mins % 60;
+            return `${h}h ${m}m`;
+        }
+
+        // ── Attendance calendar state ───────────────────────────────
+        // pdCalYear/pdCalMonth track which month is currently displayed
+        // in the calendar (0-indexed month, matches JS Date convention).
+        let pdCalYear = null;
+        let pdCalMonth = null;
+        const PD_WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const PD_MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        // Attendance dates arrive as "dd-MM-yyyy" strings — build a quick
+        // lookup keyed the same way so the calendar can match a day cell
+        // to its record without re-parsing dates on every render.
+        function pdBuildAttendanceMap(logs) {
+            const map = {};
+            logs.forEach(l => {
+                const dateStr = l['Date'];
+                if (!dateStr) return;
+                map[dateStr] = { inTime: l['In-Time'] || '', outTime: l['Out-Time'] || '' };
+            });
+            return map;
+        }
+
+        function pdDateKey(day, month, year) {
+            const dd = String(day).padStart(2, '0');
+            const mm = String(month + 1).padStart(2, '0');
+            return `${dd}-${mm}-${year}`;
+        }
+
+        // Shift roster rows already arrive keyed "dd-MM-yyyy" (formatDateOnly
+        // on the backend) — same format pdDateKey() produces, so cells can
+        // look assignments up directly without re-parsing dates.
+        function pdBuildShiftMap(roster) {
+            const map = {};
+            (roster || []).forEach(a => {
+                if (!a.date) return;
+                map[a.date] = {
+                    shiftName: a.shift_name || 'Unknown Shift',
+                    startTime: a.start_time || '',
+                    endTime: a.end_time || ''
+                };
+            });
+            return map;
+        }
+
+        // ── Day status colouring rules ──────────────────────────────
+        // Shift is 9:00 AM – 6:00 PM (matches the "Shift Timing" summary
+        // card above). PD_GRACE_MIN is how many minutes of late-in /
+        // early-out are still tolerated before a present day is flagged
+        // as "irregular" instead of a clean "present".
+        const PD_SHIFT_START_MIN = 9 * 60;   // 09:00
+        const PD_SHIFT_END_MIN = 18 * 60;    // 18:00
+        const PD_GRACE_MIN = 15;
+
+        function pdTimeToMinutes(t) {
+            if (!t) return null;
+            const [h, m] = String(t).split(':').map(Number);
+            if (isNaN(h) || isNaN(m)) return null;
+            return h * 60 + m;
+        }
+
+        // Returns 'present' | 'irregular' | 'absent' | null
+        // (null = nothing to show yet, e.g. a future day)
+        function pdDayStatus(record, isWeeklyOff, isFuture, isToday) {
+            if (record) {
+                const inMin = pdTimeToMinutes(record.inTime);
+                const outMin = pdTimeToMinutes(record.outTime);
+                const lateIn = inMin !== null && inMin > PD_SHIFT_START_MIN + PD_GRACE_MIN;
+                const earlyOut = outMin !== null && outMin < PD_SHIFT_END_MIN - PD_GRACE_MIN;
+                // Missing out-time on a past day (not today) means the
+                // employee never punched out — flag it. On today's date
+                // it just means they're still checked in, so don't flag.
+                const missingPunch = inMin === null || (outMin === null && !isToday);
+                return (lateIn || earlyOut || missingPunch) ? 'irregular' : 'present';
+            }
+            if (isWeeklyOff || isFuture) return null;
+            return 'absent';
+        }
+
+        function renderPdAttendance(logs) {
+            const body = document.getElementById('pdTabAttendance');
+            const attMap = pdBuildAttendanceMap(logs);
+
+            // Default the visible month to the most recent attendance
+            // record if we have one, otherwise the current real month.
+            if (pdCalYear === null || pdCalMonth === null) {
+                let latest = null;
+                logs.forEach(l => {
+                    const parts = String(l['Date'] || '').split('-');
+                    if (parts.length === 3) {
+                        const d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+                        if (!isNaN(d.getTime()) && (!latest || d > latest)) latest = d;
+                    }
+                });
+                const base = latest || new Date();
+                pdCalYear = base.getFullYear();
+                pdCalMonth = base.getMonth();
+            }
+
+            const node = pdCacheData || {};
+            const weeklyOffDay = node.weekly_off || '';
+            const shiftMap = pdBuildShiftMap(pdShiftRosterCache);
+
+            // "Shift Timing" card headline = the employee's PROPER/standard
+            // shift (default_shift_id, set by Admin/HR on the Profile tab) —
+            // this is the answer to "what shift is this person on", always
+            // visible regardless of any given day's punches.
+            // If today happens to have a date-specific override assigned
+            // from the Shift Roster (shifts.html), that's called out as a
+            // secondary note — it does NOT replace the proper shift.
+            const defaultShiftTmpl = node.default_shift_id ? pdShiftTemplatesMap[node.default_shift_id] : null;
+            const todayKey = pdDateKey(new Date().getDate(), new Date().getMonth(), new Date().getFullYear());
+            const todayOverride = shiftMap[todayKey];
+
+            const shiftValueHtml = defaultShiftTmpl
+                ? `${defaultShiftTmpl.start_time || '—'} – ${defaultShiftTmpl.end_time || '—'}`
+                : 'Not set';
+            let shiftSubHtml = defaultShiftTmpl ? defaultShiftTmpl.shift_name : 'Ask Admin to assign a shift';
+            if (todayOverride && (!defaultShiftTmpl || todayOverride.shiftName !== defaultShiftTmpl.shift_name)) {
+                shiftSubHtml += ` · Today overridden: ${todayOverride.shiftName}`;
+            }
+
+            body.innerHTML = `
+                <div class="pd-att-summary-row">
+                    <div class="pd-att-summary-card">
+                        <label>Shift Timing <span class="pd-admin-only-tag" title="Only Admin/HR can assign or change this">🔒 Admin-only</span></label>
+                        <div class="pd-att-summary-value">${shiftValueHtml}</div>
+                        <div class="pd-att-summary-sub">${shiftSubHtml}</div>
+                    </div>
+                    <div class="pd-att-summary-card">
+                        <label>Weekly Off</label>
+                        <div class="pd-att-summary-value">${weeklyOffDay || 'Not set'}</div>
+                        <div class="pd-att-summary-sub">&nbsp;</div>
+                    </div>
+                    <div class="pd-att-summary-card">
+                        <label>Hours This Month</label>
+                        <div class="pd-att-summary-value" id="pdHoursThisMonth">—</div>
+                        <div class="pd-att-summary-sub">&nbsp;</div>
+                    </div>
+                </div>
+                <div class="pd-cal-card">
+                    <div class="pd-cal-header">
+                        <button type="button" class="pd-cal-nav-btn" onclick="pdCalNav(-1)">◀ Prev</button>
+                        <div class="pd-cal-title" id="pdCalTitle"></div>
+                        <button type="button" class="pd-cal-nav-btn" onclick="pdCalNav(1)">Next ▶</button>
+                    </div>
+                    <div class="pd-cal-grid" id="pdCalGrid"></div>
+                    <div class="pd-cal-legend">
+                        <div class="pd-cal-legend-item"><span class="pd-cal-legend-dot present"></span>Present</div>
+                        <div class="pd-cal-legend-item"><span class="pd-cal-legend-dot irregular"></span>Irregular Timing</div>
+                        <div class="pd-cal-legend-item"><span class="pd-cal-legend-dot absent"></span>Absent</div>
+                        <div class="pd-cal-legend-item"><span class="pd-cal-legend-dot weeklyoff"></span>Weekly Off</div>
+                        <div class="pd-cal-legend-item"><span class="pd-cal-legend-dot hasshift"></span>Shift Override</div>
+                    </div>
+                </div>`;
+
+            // Stash the maps/weekly-off on window-scope vars so nav clicks
+            // (which only re-run the grid, not this whole innerHTML swap)
+            // can reuse them without re-fetching.
+            window._pdAttMap = attMap;
+            window._pdShiftMap = shiftMap;
+            window._pdWeeklyOffDay = weeklyOffDay;
+            pdRenderCalendarGrid();
+        }
+
+        function pdCalNav(delta) {
+            pdCalMonth += delta;
+            if (pdCalMonth < 0) { pdCalMonth = 11; pdCalYear--; }
+            if (pdCalMonth > 11) { pdCalMonth = 0; pdCalYear++; }
+            pdRenderCalendarGrid();
+        }
+
+        function pdRenderCalendarGrid() {
+            const attMap = window._pdAttMap || {};
+            const shiftMap = window._pdShiftMap || {};
+            const weeklyOffDay = window._pdWeeklyOffDay || '';
+            const year = pdCalYear, month = pdCalMonth;
+
+            document.getElementById('pdCalTitle').textContent = `${PD_MONTH_NAMES[month]} ${year}`;
+
+            const firstDow = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
+            const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+
+            let cells = PD_WEEKDAY_NAMES.map(d => `<div class="pd-cal-daylabel">${d.slice(0, 3)}</div>`).join('');
+            for (let i = 0; i < firstDow; i++) cells += `<div class="pd-cal-cell pd-cal-empty"></div>`;
+
+            const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+            let monthMinutes = 0;
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dow = new Date(year, month, day).getDay();
+                const key = pdDateKey(day, month, year);
+                const record = attMap[key];
+                const shiftAssignment = shiftMap[key];
+                const isWeeklyOff = weeklyOffDay && PD_WEEKDAY_NAMES[dow] === weeklyOffDay;
+                const isToday = isCurrentMonth && today.getDate() === day;
+                const isFuture = new Date(year, month, day) > todayDateOnly;
+
+                const status = pdDayStatus(record, isWeeklyOff, isFuture, isToday);
+
+                let cls = 'pd-cal-cell';
+                if (isWeeklyOff) cls += ' pd-cal-weeklyoff';
+                if (status === 'present') cls += ' pd-cal-present';
+                if (status === 'irregular') cls += ' pd-cal-irregular';
+                if (status === 'absent') cls += ' pd-cal-absent';
+                if (isToday) cls += ' pd-cal-today';
+                // A day with an admin-assigned shift override gets a marker
+                // even if it's a future day with no attendance yet — this is
+                // what surfaces "admin gave this intern a different shift on
+                // this date" when the day is clicked.
+                if (shiftAssignment) cls += ' pd-cal-hasshift';
+
+                if (record) {
+                    monthMinutes += pdMinutesBetween(record.inTime, record.outTime);
+                }
+
+                // Clickable if there's either an attendance record OR a shift
+                // assignment for the day — so a future shift-only day (no
+                // punch yet) can still be opened to see which shift was given.
+                const clickAttr = (record || shiftAssignment) ? `onclick="pdOpenDayModal('${key}')"` : '';
+                cells += `<div class="${cls}" ${clickAttr}>${day}</div>`;
+            }
+
+            document.getElementById('pdCalGrid').innerHTML = cells;
+
+            const h = Math.floor(monthMinutes / 60), m = monthMinutes % 60;
+            const hoursEl = document.getElementById('pdHoursThisMonth');
+            if (hoursEl) hoursEl.textContent = monthMinutes > 0 ? `${h}h ${m}m` : '0h 0m';
+        }
+
+        function pdMinutesBetween(inTime, outTime) {
+            if (!inTime || !outTime) return 0;
+            const [ih, im] = String(inTime).split(':').map(Number);
+            const [oh, om] = String(outTime).split(':').map(Number);
+            if ([ih, im, oh, om].some(n => isNaN(n))) return 0;
+            let mins = (oh * 60 + om) - (ih * 60 + im);
+            if (mins < 0) mins += 24 * 60;
+            return mins;
+        }
+
+        function pdOpenDayModal(key) {
+            const record = (window._pdAttMap || {})[key];
+            const shiftAssignment = (window._pdShiftMap || {})[key];
+            const parts = key.split('-'); // dd-MM-yyyy
+            const d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+            const title = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+            document.getElementById('pdDayModalTitle').textContent = title;
+            document.getElementById('pdDayModalIn').textContent = (record && record.inTime) ? record.inTime : '—';
+            document.getElementById('pdDayModalOut').textContent = (record && record.outTime) ? record.outTime : 'Still In';
+
+            // Shift row: only shows what the admin actually assigned for
+            // THIS specific date via the Shift Roster — never a guessed
+            // default. If nothing was assigned, it says so plainly.
+            const shiftRow = document.getElementById('pdDayModalShiftRow');
+            const shiftEl = document.getElementById('pdDayModalShift');
+            if (shiftAssignment) {
+                shiftEl.textContent = `${shiftAssignment.shiftName} (${shiftAssignment.startTime || '—'} – ${shiftAssignment.endTime || '—'})`;
+                shiftRow.style.display = '';
+            } else {
+                shiftEl.textContent = 'No shift assigned';
+                shiftRow.style.display = '';
+            }
+
+            document.getElementById('pdDayModalOverlay').classList.add('open');
+        }
+
+        function closePdDayModal() {
+            document.getElementById('pdDayModalOverlay').classList.remove('open');
+        }
+
+        const PD_TASK_STATUS_MAP = {
+            todo: { label: 'To Do', cls: 'pill-inactive' },
+            in_progress: { label: 'In Progress', cls: 'pill-active' },
+            in_review: { label: 'In Review', cls: 'pill-inactive' },
+            completed: { label: 'Completed', cls: 'pill-active' }
+        };
+
+        async function fetchPdTasks(empId) {
+            const body = document.getElementById('pdTabTasks');
+            body.innerHTML = `<div class="pd-loading-state"><div class="pd-spinner"></div>Loading tasks…</div>`;
+            try {
+                // getTasks doesn't take an emp_id filter server-side for admin
+                // roles, so fetch the accessible set and filter client-side.
+                const res = await fetch(`${API_URL}?action=getTasks&token=${SESSION_TOKEN_VERIFIER}&limit=1000`);
+                const payload = await res.json();
+                if (payload.status === 'success') {
+                    const allTasks = (payload.data && payload.data.data) || [];
+                    pdTasksCache = allTasks.filter(t => String(t.assigned_to) === String(empId));
+                    pdTasksLoaded = true;
+                    renderPdTasks(pdTasksCache);
+                } else {
+                    body.innerHTML = `<div class="pd-error-state">${payload.message || 'Could not load tasks.'}</div>`;
+                }
+            } catch (err) {
+                body.innerHTML = `<div class="pd-error-state">Connection error — please try again.</div>`;
+            }
+        }
+
+        function renderPdTasks(tasks) {
+            const body = document.getElementById('pdTabTasks');
+            if (!tasks.length) {
+                body.innerHTML = `<div class="pd-error-state">No tasks assigned to this employee yet.</div>`;
+                return;
+            }
+            body.innerHTML = `
+                <div class="pd-section-title">✅ Assigned Tasks (${tasks.length})</div>
+                <div class="pd-card" style="padding:0;">
+                    ${tasks.map(t => {
+                const st = PD_TASK_STATUS_MAP[t.status] || { label: t.status, cls: 'pill-inactive' };
+                return `
+                            <div class="pd-log-row" style="flex-direction:column; align-items:flex-start; gap:6px;">
+                                <div style="display:flex; justify-content:space-between; width:100%; align-items:center; gap:8px;">
+                                    <div class="pd-log-date">${t.title}</div>
+                                    <span class="status-pill ${st.cls}" style="flex-shrink:0;">${st.label}</span>
+                                </div>
+                                <div class="pd-log-sub">${t.priority ? '🔺 ' + t.priority.charAt(0).toUpperCase() + t.priority.slice(1) + ' priority' : ''}${t.due_date ? ' · Due ' + t.due_date : ' · No due date'}</div>
+                                ${t.submission_link ? `<a href="${t.submission_link}" target="_blank" rel="noopener" style="font-size:12px; color:var(--accent-glow);">🔗 View Submission</a>` : ''}
+                            </div>`;
+            }).join('')}
+                </div>`;
+        }
+    </script>
+</body>
+
+</html>

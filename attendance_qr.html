@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendance Punch — Codeline.AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+    rel="stylesheet" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #07070A;
+      --surface: rgba(255, 255, 255, 0.038);
+      --surface-hi: rgba(255, 255, 255, 0.072);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hi: rgba(255, 255, 255, 0.14);
+      --text: #F0F0F5;
+      --muted: #8A8A97;
+      --dim: #44444F;
+      --accent: #6C8EFF;
+      --accent-dim: rgba(108, 142, 255, 0.14);
+      --success: #34D399;
+      --success-dim: rgba(52, 211, 153, 0.13);
+      --warning: #FBBF24;
+      --warning-dim: rgba(251, 191, 36, 0.12);
+      --danger: #F87171;
+      --danger-dim: rgba(248, 113, 113, 0.12);
+      --r: 18px;
+      --r-sm: 10px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      background-image:
+        linear-gradient(rgba(108, 142, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(108, 142, 255, 0.025) 1px, transparent 1px),
+        radial-gradient(ellipse at 30% 0%, rgba(108, 142, 255, 0.10) 0%, transparent 60%),
+        radial-gradient(ellipse at 75% 100%, rgba(52, 211, 153, 0.06) 0%, transparent 55%);
+      background-size: 48px 48px, 48px 48px, 100% 100%, 100% 100%;
+      background-attachment: fixed;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 400px;
+      background: rgba(12, 12, 16, 0.82);
+      border: 1px solid var(--border-hi);
+      border-radius: 24px;
+      backdrop-filter: blur(32px) saturate(160%);
+      -webkit-backdrop-filter: blur(32px) saturate(160%);
+      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── Header ── */
+    .hdr {
+      padding: 20px 24px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .hdr-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, rgba(108, 142, 255, 0.22), rgba(108, 142, 255, 0.08));
+      border: 1px solid rgba(108, 142, 255, 0.22);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+
+    .hdr-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 15.5px;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .hdr-sub {
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .hdr-clock {
+      margin-left: auto;
+      text-align: right;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .hdr-clock .t {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.5px;
+    }
+
+    .hdr-clock .d {
+      font-size: 10px;
+      color: var(--dim);
+      margin-top: 1px;
+    }
+
+    .body {
+      padding: 22px 24px 26px;
+    }
+
+    /* ── Location status strip (always visible at the top, no
+         separate "step" screen — just an inline indicator) ── */
+    .loc-strip {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 10px 13px;
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-bottom: 16px;
+      transition: all 0.25s ease;
+    }
+
+    .loc-strip.ok {
+      background: var(--success-dim);
+      border-color: rgba(52, 211, 153, 0.25);
+      color: var(--success);
+    }
+
+    .loc-strip.bad {
+      background: var(--danger-dim);
+      border-color: rgba(248, 113, 113, 0.25);
+      color: var(--danger);
+    }
+
+    .loc-strip .pdot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .pdot-y { background: var(--warning); animation: blinkDot 1.3s ease-in-out infinite; }
+    .pdot-g { background: var(--success); }
+    .pdot-r { background: var(--danger); }
+
+    @keyframes blinkDot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+
+    .loc-strip span.txt {
+      flex: 1;
+      line-height: 1.4;
+    }
+
+    .btn-retry-loc {
+      flex-shrink: 0;
+      background: rgba(248, 113, 113, 0.16);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      color: var(--danger);
+      font-size: 11.5px;
+      font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
+      padding: 6px 11px;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+
+    .btn-retry-loc:hover { background: rgba(248, 113, 113, 0.26); }
+
+    /* ── Info / Error boxes ── */
+    .err {
+      background: var(--danger-dim);
+      border: 1px solid rgba(248, 113, 113, 0.22);
+      border-radius: var(--r-sm);
+      padding: 10px 13px;
+      font-size: 12.5px;
+      color: var(--danger);
+      margin-bottom: 14px;
+      display: none;
+      line-height: 1.5;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border-radius: var(--r-sm);
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      letter-spacing: 0.2px;
+      transition: all 0.2s ease;
+    }
+
+    .btn+.btn { margin-top: 10px; }
+
+    .btn-blue {
+      background: linear-gradient(135deg, #3A5EE8, #6C8EFF);
+      color: #fff;
+      box-shadow: 0 5px 18px rgba(108, 142, 255, 0.28);
+    }
+    .btn-blue:hover { transform: translateY(-1px); box-shadow: 0 8px 26px rgba(108, 142, 255, 0.40); }
+
+    .btn-in {
+      background: linear-gradient(135deg, #059669, #34D399);
+      color: #fff;
+      box-shadow: 0 5px 18px rgba(52, 211, 153, 0.28);
+    }
+    .btn-in:hover { transform: translateY(-1px); box-shadow: 0 8px 26px rgba(52, 211, 153, 0.42); }
+
+    .btn-out {
+      background: linear-gradient(135deg, #92400E, #FBBF24);
+      color: #111;
+      box-shadow: 0 5px 18px rgba(251, 191, 36, 0.22);
+    }
+    .btn-out:hover { transform: translateY(-1px); box-shadow: 0 8px 26px rgba(251, 191, 36, 0.35); }
+
+    .btn:active { transform: translateY(0) !important; }
+
+    .btn:disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* ── Time tiles ── */
+    .time-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      margin-bottom: 18px;
+    }
+
+    .tc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 12px 13px;
+      text-align: center;
+    }
+
+    .tc-label {
+      font-size: 10px;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 5px;
+    }
+
+    .tc-val {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .tc-in .tc-val { color: var(--success); }
+    .tc-out .tc-val { color: var(--warning); }
+
+    /* ── Employee identity block ── */
+    .emp-meta {
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    .emp-meta strong {
+      color: var(--text);
+      display: block;
+      font-size: 17px;
+      font-family: 'Space Grotesk', sans-serif;
+      margin-bottom: 3px;
+    }
+
+    .emp-meta .emp-id {
+      font-size: 11.5px;
+      color: var(--dim);
+    }
+
+    /* Read-only Mobile / Email chips — static once saved on this device */
+    .profile-chips {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 9px 11px;
+      overflow: hidden;
+    }
+
+    .chip .chip-label {
+      font-size: 9.5px;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 3px;
+    }
+
+    .chip .chip-val {
+      font-size: 12px;
+      color: var(--text);
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Today's date badge */
+    .date-badge {
+      text-align: center;
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-bottom: 18px;
+      padding-bottom: 16px;
+      border-bottom: 1px dashed var(--border);
+    }
+
+    .date-badge strong { color: var(--text); }
+
+    /* ── Complete banner ── */
+    .complete-banner {
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), rgba(52, 211, 153, 0.05));
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      border-radius: var(--r-sm);
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .complete-banner .cb-icon { font-size: 26px; margin-bottom: 8px; }
+    .complete-banner .cb-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--success);
+      margin-bottom: 4px;
+    }
+    .complete-banner .cb-sub { font-size: 12px; color: var(--muted); }
+
+    /* ── Spinner ── */
+    .spin {
+      width: 15px;
+      height: 15px;
+      border: 2.5px solid rgba(255, 255, 255, 0.22);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: rot 0.65s linear infinite;
+      display: none;
+      flex-shrink: 0;
+    }
+    .spin.dark { border-color: rgba(0, 0, 0, 0.15); border-top-color: #111; }
+    @keyframes rot { to { transform: rotate(360deg); } }
+
+    /* ── Form fields (first-time-on-this-device registration) ── */
+    .step-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    .step-sub {
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+
+    .field { margin-bottom: 12px; }
+
+    .field label {
+      display: block;
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .field input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 11px 13px;
+      font-size: 13.5px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .field input:focus { border-color: var(--accent); }
+    .field input::placeholder { color: var(--dim); }
+
+    /* ── Success checkmark overlay — flashes over the punch view for
+         ~1.5s after a successful Check In/Out, then fades away leaving
+         the same screen (updated) visible underneath. ── */
+    .success-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(7, 7, 10, 0.88);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      z-index: 50;
+    }
+
+    .success-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .success-overlay .ov-ring {
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      background: var(--success-dim);
+      border: 1.5px solid rgba(52, 211, 153, 0.32);
+      transform: scale(0.6);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .success-overlay.show .ov-ring { transform: scale(1); }
+
+    .success-overlay .ov-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--text);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="card">
+
+    <div class="hdr">
+      <div class="hdr-icon">⚡</div>
+      <div>
+        <div class="hdr-title">Codeline<span style="color:rgba(108,142,255,0.8)">.AI</span></div>
+        <div class="hdr-sub">Employee Attendance Portal</div>
+      </div>
+      <div class="hdr-clock">
+        <div class="t" id="hdrClock">--:--</div>
+        <div class="d" id="hdrDate">--</div>
+      </div>
+    </div>
+
+    <div class="body">
+
+      <!-- ══ Location status — auto-requested on page load, always
+           visible as a small strip, never a separate full screen ══ -->
+      <div class="loc-strip" id="locStrip">
+        <span class="pdot pdot-y" id="locDot"></span>
+        <span class="txt" id="locStripText">Detecting your location…</span>
+        <button class="btn-retry-loc" id="btnRetryLoc" onclick="requestLocation()" style="display:none;">Retry</button>
+      </div>
+      <div class="err" id="errLoc"></div>
+
+      <!-- ══ FIRST-TIME registration form — only ever shown once per
+           device. After a successful verify, this device is locked to
+           this employee and the form never appears again on it. ══ -->
+      <div id="firstTimeForm" style="display:none;">
+        <div class="step-title">Enter Your Details</div>
+        <div class="step-sub">First time on this device — fill this once. After verifying, this device
+          will always punch in/out as you.</div>
+
+        <div class="err" id="errDetails"></div>
+
+        <div class="field">
+          <label>Employee ID</label>
+          <input id="inpEmpId" placeholder="e.g. EMP123456" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label>Name</label>
+          <input id="inpName" placeholder="Your full name" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input id="inpEmail" type="email" placeholder="you@example.com" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label>Mobile No.</label>
+          <input id="inpMobile" type="tel" placeholder="10-digit mobile number" autocomplete="off" />
+        </div>
+
+        <button class="btn btn-blue" id="btnVerify" onclick="submitDetails()">
+          <span class="spin" id="spVerify"></span> ✅ &nbsp;Verify &amp; Continue
+        </button>
+      </div>
+
+      <!-- ══ Punch view — shown directly for any returning device.
+           Name/Mobile/Email are read-only (static — locked to this
+           device once saved). No "switch employee" escape hatch. ══ -->
+      <div id="punchView" style="display:none;">
+
+        <div class="emp-meta">
+          <strong id="showName">—</strong>
+          <span class="emp-id" id="showEmpId">—</span>
+        </div>
+
+        <div class="profile-chips">
+          <div class="chip">
+            <div class="chip-label">Mobile</div>
+            <div class="chip-val" id="showMobile">—</div>
+          </div>
+          <div class="chip">
+            <div class="chip-label">Email</div>
+            <div class="chip-val" id="showEmail">—</div>
+          </div>
+        </div>
+
+        <div class="date-badge">Today — <strong id="todayDateDisp">—</strong></div>
+
+        <div class="time-row">
+          <div class="tc tc-in">
+            <div class="tc-label">⬆ Punch IN</div>
+            <div class="tc-val" id="inDisp">—</div>
+          </div>
+          <div class="tc tc-out">
+            <div class="tc-label">⬇ Punch OUT</div>
+            <div class="tc-val" id="outDisp">—</div>
+          </div>
+        </div>
+
+        <!-- Shown when both IN+OUT already done today -->
+        <div class="complete-banner" id="completeBanner" style="display:none;">
+          <div class="cb-icon">✅</div>
+          <div class="cb-title">Today's attendance is complete!</div>
+          <div class="cb-sub">Both IN and OUT have been recorded.</div>
+        </div>
+
+        <div class="err" id="errPunch"></div>
+
+        <button class="btn btn-in" id="btnIn" onclick="doPunch('in')" style="display:none;" disabled>
+          <span class="spin" id="spIn"></span> ✅ &nbsp;Punch IN
+        </button>
+        <button class="btn btn-out" id="btnOut" onclick="doPunch('out')" style="display:none;" disabled>
+          <span class="spin dark" id="spOut"></span> 🕐 &nbsp;Punch OUT
+        </button>
+      </div>
+
+    </div><!-- /body -->
+
+    <!-- ══ Success checkmark flash — appears briefly after a punch,
+         then fades to reveal the same (updated) punch view. ══ -->
+    <div class="success-overlay" id="successOverlay">
+      <div class="ov-ring" id="ovRing">✅</div>
+      <div class="ov-title" id="ovTitle">Punched IN!</div>
+    </div>
+
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════
+    //  CONFIG
+    // ═══════════════════════════════════════════════════
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyUp8iouhK5Bu6A7hSq0tgDDRAxmm7Am0HLhHSxe4vb1NmtZCW9rJAlsAGd8jWE16xQnw/exec';
+
+    // Universal link — no ?branch=BR001 needed. Page asks for GPS on
+    // load, backend checks every registered branch's geofence and
+    // tells us which one (if any) the employee is standing inside.
+
+    // Employee details are captured ONCE on this device (first-time
+    // form) and then remembered locally — this device is permanently
+    // locked to that employee from then on. There is intentionally NO
+    // "switch employee" escape hatch, so a device can't be used to
+    // punch in/out as someone else.
+    const KIOSK_KEY = 'ebms_self_punch_employee';
+
+    let userLat = null, userLng = null;
+    let locationVerified = false;
+    let lastPunch = null;   // null | 'in' | 'both'
+    let todayIn = '—', todayOut = '—';
+    let empInfo = {};
+
+    function getSavedEmployee() {
+      try { return JSON.parse(localStorage.getItem(KIOSK_KEY) || 'null'); } catch (e) { return null; }
+    }
+    function saveEmployee(emp) {
+      try { localStorage.setItem(KIOSK_KEY, JSON.stringify(emp)); } catch (e) {}
+    }
+
+    // ── Live clock ────────────────────────────────────
+    function tick() {
+      const n = new Date();
+      document.getElementById('hdrClock').textContent =
+        n.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      document.getElementById('hdrDate').textContent =
+        n.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+    tick(); setInterval(tick, 1000);
+
+    // ── Location strip helpers ─────────────────────────
+    function setLocStrip(state, text) {
+      const strip = document.getElementById('locStrip');
+      const dot = document.getElementById('locDot');
+      const txt = document.getElementById('locStripText');
+      const retryBtn = document.getElementById('btnRetryLoc');
+      strip.className = 'loc-strip' + (state === 'ok' ? ' ok' : state === 'bad' ? ' bad' : '');
+      dot.className = 'pdot ' + (state === 'ok' ? 'pdot-g' : state === 'bad' ? 'pdot-r' : 'pdot-y');
+      txt.textContent = text;
+      retryBtn.style.display = state === 'bad' ? 'inline-block' : 'none';
+    }
+
+    function setPunchButtonsEnabled(enabled) {
+      document.getElementById('btnIn').disabled = !enabled;
+      document.getElementById('btnOut').disabled = !enabled;
+    }
+
+    // ── Find which branch's geofence the employee is currently inside
+    // (fully public — no login/QR checksum). ──────────────────────
+    async function findMyBranch(lat, lng) {
+      const res = await fetch(`${API_URL}?action=findBranchByLocation&lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`);
+      return res.json();
+    }
+
+    // ── Location — auto-requested on page load, no separate screen ──
+    function requestLocation() {
+      const errEl = document.getElementById('errLoc');
+      const retryBtn = document.getElementById('btnRetryLoc');
+      errEl.style.display = 'none';
+      retryBtn.style.display = 'none';
+      locationVerified = false;
+      setPunchButtonsEnabled(false);
+      setLocStrip('wait', 'Fetching GPS location…');
+
+      if (!navigator.geolocation) {
+        setLocStrip('bad', 'Geolocation isn\'t supported in this browser.');
+        showErr(errEl, 'Please try a different device/browser.');
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        async pos => {
+          userLat = pos.coords.latitude; userLng = pos.coords.longitude;
+          setLocStrip('wait', 'Detecting your branch…');
+
+          try {
+            const out = await findMyBranch(userLat, userLng);
+            if (out.status === 'success' && out.data) {
+              const dist = Math.round(out.data.distance);
+              const branchLabel = out.data.branch_name || out.data.branch_id;
+              setLocStrip('ok', branchLabel + ' verified ✓ (' + dist + 'm away)');
+              locationVerified = true;
+              afterLocationVerified();
+            } else {
+              setLocStrip('bad', 'Not within any office boundary');
+              showErr(errEl, '⚠️ ' + (out.message || 'You are not within any registered branch\'s office boundary.'));
+            }
+          } catch (e) {
+            setLocStrip('bad', 'Network error — could not detect branch');
+            showErr(errEl, '⚠️ Check your internet and tap Retry.');
+          }
+        },
+        err => {
+          const m = { 1: 'Location permission denied. Please allow it in your browser settings.', 2: 'GPS signal not found. Please turn on WiFi/Location.', 3: 'Location request timed out.' };
+          setLocStrip('bad', 'Location error');
+          showErr(errEl, '⚠️ ' + (m[err.code] || err.message) + ' Tap Retry once fixed.');
+        },
+        { enableHighAccuracy: true, timeout: 14000, maximumAge: 0 }
+      );
+    }
+
+    // ── After GPS+branch verified: enable punching. Punch view /
+    // first-time form was already rendered on load (independent of
+    // location), we just unlock the action buttons here. ──────────
+    function afterLocationVerified() {
+      if (document.getElementById('punchView').style.display !== 'none') {
+        setPunchButtonsEnabled(lastPunch !== 'both');
+      }
+    }
+
+    // ── Decide which section to render: returning-device punch view,
+    // or first-time registration form. Runs immediately on load —
+    // independent of location, so Name/Mobile/Email/Date show right
+    // away; only the actual Check In/Out buttons wait on GPS. ──────
+    function renderInitialView() {
+      const saved = getSavedEmployee();
+      if (saved && saved.emp_id) {
+        empInfo = saved;
+        document.getElementById('firstTimeForm').style.display = 'none';
+        document.getElementById('punchView').style.display = 'block';
+        renderPunchView();
+      } else {
+        document.getElementById('punchView').style.display = 'none';
+        document.getElementById('firstTimeForm').style.display = 'block';
+      }
+    }
+
+    // ── First-time registration submit ─────────────────
+    async function submitDetails() {
+      const errEl = document.getElementById('errDetails');
+      errEl.style.display = 'none';
+
+      const emp_id = document.getElementById('inpEmpId').value.trim();
+      const name   = document.getElementById('inpName').value.trim();
+      const email  = document.getElementById('inpEmail').value.trim();
+      const mobile = document.getElementById('inpMobile').value.trim();
+
+      if (!emp_id || !name || !email || !mobile) {
+        showErr(errEl, 'All fields (Employee ID, Name, Email, Mobile) are required.');
+        return;
+      }
+
+      const btn = document.getElementById('btnVerify');
+      const sp  = document.getElementById('spVerify');
+      btn.disabled = true; sp.style.display = 'inline-block';
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'verifyEmployeeSelf', emp_id, name, email, mobile })
+        });
+        const data = await res.json();
+
+        if (data.status === 'success' && data.data) {
+          empInfo = {
+            emp_id: data.data.emp_id,
+            name:   data.data.name,
+            email:  data.data.email,
+            mobile: data.data.mobile
+          };
+          // 🔒 Locked to this device from now on — no switch-employee
+          // option exists anywhere in this page.
+          saveEmployee(empInfo);
+
+          document.getElementById('firstTimeForm').style.display = 'none';
+          document.getElementById('punchView').style.display = 'block';
+          renderPunchView();
+        } else {
+          showErr(errEl, data.message || 'Details did not match. Please double-check and try again.');
+          btn.disabled = false; sp.style.display = 'none';
+        }
+      } catch (e) {
+        showErr(errEl, 'Network error. Check your internet and try again.');
+        btn.disabled = false; sp.style.display = 'none';
+      }
+    }
+
+    // ── Punch view — populate identity + today's IN/OUT status ─────
+    async function renderPunchView() {
+      document.getElementById('showName').textContent = empInfo.name || empInfo.emp_id;
+      document.getElementById('showEmpId').textContent = empInfo.emp_id;
+      document.getElementById('showMobile').textContent = empInfo.mobile || '—';
+      document.getElementById('showEmail').textContent = empInfo.email || '—';
+      document.getElementById('todayDateDisp').textContent =
+        new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+      // Buttons stay disabled until location verifies (see afterLocationVerified)
+      setPunchButtonsEnabled(false);
+
+      try {
+        const todayStr = istDateStr();
+        const r = await fetch(`${API_URL}?action=getAttendance&emp_id=${encodeURIComponent(empInfo.emp_id)}&date=${todayStr}&limit=5`);
+        const d = await r.json();
+        if (d.status === 'success') {
+          const logs = (d.data && d.data.data) || [];
+          const mine = logs.find(l => String(l['Email'] || '').toLowerCase() === String(empInfo.email || '').toLowerCase()) || logs[0];
+          if (mine) {
+            todayIn = mine['In-Time'] || '—';
+            todayOut = mine['Out-Time'] || '—';
+            if (mine['In-Time'] && mine['Out-Time']) lastPunch = 'both';
+            else if (mine['In-Time']) lastPunch = 'in';
+            else lastPunch = null;
+          } else {
+            lastPunch = null; todayIn = '—'; todayOut = '—';
+          }
+        }
+      } catch (e) { /* silent — still show punch view */ }
+
+      document.getElementById('inDisp').textContent = todayIn !== '—' ? fmt12(todayIn) : '—';
+      document.getElementById('outDisp').textContent = todayOut !== '—' ? fmt12(todayOut) : '—';
+
+      const btnIn = document.getElementById('btnIn');
+      const btnOut = document.getElementById('btnOut');
+      const banner = document.getElementById('completeBanner');
+
+      if (lastPunch === 'both') {
+        banner.style.display = 'block';
+        btnIn.style.display = 'none';
+        btnOut.style.display = 'none';
+      } else if (lastPunch === 'in') {
+        banner.style.display = 'none';
+        btnIn.style.display = 'none';
+        btnOut.style.display = 'flex';
+      } else {
+        banner.style.display = 'none';
+        btnIn.style.display = 'flex';
+        btnOut.style.display = 'none';
+      }
+
+      // If location already verified by the time this resolves, unlock now.
+      if (locationVerified) setPunchButtonsEnabled(lastPunch !== 'both');
+    }
+
+    // ── Punch (Check In / Check Out) ────────────────────
+    async function doPunch(type) {
+      const errEl = document.getElementById('errPunch');
+      errEl.style.display = 'none';
+
+      if (!empInfo.emp_id) {
+        showErr(errEl, '⚠️ Employee details not found. Please reload the page and try again.'); return;
+      }
+
+      const sp = document.getElementById(type === 'in' ? 'spIn' : 'spOut');
+      const btn = document.getElementById(type === 'in' ? 'btnIn' : 'btnOut');
+      sp.style.display = 'inline-block'; btn.disabled = true;
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+      const dateStr = istDateStr();
+
+      const payload = {
+        action: 'markAttendance',
+        emp_id: empInfo.emp_id,
+        date: dateStr,
+        time: timeStr
+      };
+      // No token / checksum — geofence + the one-time device registration
+      // is the identity proof for this self-service kiosk flow.
+
+      try {
+        const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+          if (type === 'in') todayIn = (data.data && data.data['In-Time']) ? data.data['In-Time'] : timeStr;
+          else todayOut = (data.data && data.data['Out-Time']) ? data.data['Out-Time'] : timeStr;
+
+          document.getElementById('inDisp').textContent = todayIn !== '—' ? fmt12(todayIn) : '—';
+          document.getElementById('outDisp').textContent = todayOut !== '—' ? fmt12(todayOut) : '—';
+
+          if (type === 'in') {
+            lastPunch = 'in';
+            document.getElementById('btnIn').style.display = 'none';
+            document.getElementById('btnOut').style.display = 'flex';
+            flashSuccess('✅', 'Punched IN!');
+          } else {
+            lastPunch = 'both';
+            document.getElementById('btnOut').style.display = 'none';
+            document.getElementById('completeBanner').style.display = 'block';
+            flashSuccess('🕐', 'Punched OUT!');
+          }
+
+          sp.style.display = 'none';
+          setPunchButtonsEnabled(locationVerified && lastPunch !== 'both');
+        } else {
+          showErr(errEl, data.message || 'Punch could not be recorded. Please try again.');
+          sp.style.display = 'none'; btn.disabled = false;
+        }
+      } catch (e) {
+        showErr(errEl, 'Network error. Please check your internet and try again.');
+        sp.style.display = 'none'; btn.disabled = false;
+      }
+    }
+
+    // ── Brief checkmark flash — 1.5s, then fades back to the same
+    // (now-updated) punch view. No separate "success screen". ──────
+    function flashSuccess(icon, title) {
+      const overlay = document.getElementById('successOverlay');
+      document.getElementById('ovRing').textContent = icon;
+      document.getElementById('ovTitle').textContent = title;
+      overlay.classList.add('show');
+      setTimeout(() => overlay.classList.remove('show'), 1500);
+    }
+
+    // ── Helpers ───────────────────────────────────────
+    function showErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+
+    function istDateStr() {
+      const IST = new Date(Date.now() + 330 * 60 * 1000);
+      return IST.toISOString().split('T')[0];
+    }
+
+    function fmt12(val) {
+      if (!val || val === '—') return '—';
+      const s = String(val).trim();
+      let h = 0, m = 0;
+      if (s.includes('T')) { const p = s.split('T')[1].split(':'); h = parseInt(p[0]); m = parseInt(p[1]); }
+      else if (s.includes(':')) { const p = s.split(':'); h = parseInt(p[0]); m = parseInt(p[1]); }
+      else if (!isNaN(parseFloat(s))) { const t = Math.round(parseFloat(s) * 24 * 60); h = Math.floor(t / 60) % 24; m = t % 60; }
+      else return s;
+      const ap = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ' ' + ap;
+    }
+
+    // ── Boot ──────────────────────────────────────────
+    window.addEventListener('load', () => {
+      // Render Name/Mobile/Email/Date (or the first-time form)
+      // immediately — doesn't wait on GPS.
+      renderInitialView();
+      // Location is requested automatically, silently, right away.
+      // Only the Check In/Out buttons stay locked until it succeeds.
+      requestLocation();
+    });
+  </script>
+</body>
+
+</html>
