@@ -2356,10 +2356,11 @@
     // Browser new Date() uses the local timezone — but if the
     // user's device is on UTC or another TZ, the date can shift by
     // a day. Explicitly calculate IST (UTC+5:30).
-    function getISTDate() {
+     function getISTDate() {
       const now = new Date();
-      const IST_OFFSET_MS = 330 * 60 * 1000; // 5h 30m
-      return new Date(now.getTime() + IST_OFFSET_MS - now.getTimezoneOffset() * 60 * 1000);
+      const ist = new Date(now.getTime() + 330 * 60 * 1000); // IST = UTC + 5:30
+      return new Date(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate(),
+      ist.getUTCHours(), ist.getUTCMinutes(), ist.getUTCSeconds());
     }
 
     // Backend (formatDateOnly / formatDateOnly) now sends plain "dd-MM-yyyy"
@@ -2491,9 +2492,9 @@
     }
     // ─────────────────────────────────────────────────────────
 
-    const CAL_DEFAULT_SHIFT_START_MIN = 9 * 60;   // 09:00 fallback
-    const CAL_DEFAULT_SHIFT_END_MIN = 18 * 60;    // 18:00 fallback
-    const CAL_GRACE_MIN = 15;
+    const CAL_DEFAULT_SHIFT_START_MIN = 24 * 60;  // no shift assigned: never flag late-in
+    const CAL_DEFAULT_SHIFT_END_MIN = 0;          // no shift assigned: never flag early-out
+     const CAL_GRACE_MIN = 15;
 
     function timeToMinutes(t) {
       if (!t) return null;
@@ -2516,7 +2517,7 @@
         const missingPunch = (outMin === null && !isToday);
         return (lateIn || earlyOut || missingPunch) ? 'irregular' : 'present';
       }
-      if (isOffDay || isFuture) return null;
+      if (isOffDay || isFuture || isToday) return null;
       return 'absent';
     }
 
@@ -3213,8 +3214,8 @@
         let statusKey = ''; // used by the popup for its coloured badge
 
         if (isFuture) {
-          cls += ' cal-future';
-        } else if (leaveDatesSet.has(dateKey)) {
+        cls += isOffDay ? ' cal-off' : ' cal-future';
+         } else if (leaveDatesSet.has(dateKey)) {
           cls += ' cal-leave';
           statusLabel = 'Approved Leave';
           statusKey = 'leave';
@@ -3294,8 +3295,10 @@
           shiftStartMin !== null ? shiftStartMin : CAL_DEFAULT_SHIFT_START_MIN,
           shiftEndMin !== null ? shiftEndMin : CAL_DEFAULT_SHIFT_END_MIN);
         statusKey = status; statusLabel = status === 'irregular' ? 'Irregular Timing' : 'Present';
-      } else if (isOffDay) {
+       } else if (isOffDay) {
         statusKey = 'off'; statusLabel = 'Weekly Off';
+      } else if (isToday) {
+        statusKey = 'off'; statusLabel = 'Today — not punched yet';
       }
       const statusEl = document.getElementById('calDayModalStatus');
       statusEl.className = 'cal-day-modal-status st-' + statusKey;
