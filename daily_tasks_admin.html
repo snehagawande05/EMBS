@@ -587,7 +587,7 @@
     <div class="header-block">
       <div class="title-area">
         <h1>📝 Daily Task Approvals</h1>
-        <p>Employee-submitted daily task logs ko review, approve, reject ya correction ke liye bhejein</p>
+        <p>Review, approve, reject, or request corrections for daily task logs submitted by employees.</p>
       </div>
     </div>
 
@@ -699,7 +699,7 @@
             <label class="section-label" style="margin-bottom:0;">Admin Remark <span
                 style="color:var(--text-dim); text-transform:none; font-weight:400;">(required for Reject / Request
                 Correction)</span></label>
-            <textarea id="reviewRemarkInput" placeholder="Feedback, rejection reason, ya correction note likhein..."></textarea>
+            <textarea id="reviewRemarkInput" placeholder="Enter feedback, rejection reason, or correction notes..."></textarea>
           </div>
 
           <div class="review-actions">
@@ -775,12 +775,12 @@
 
           applyFilters();
         } else {
-          showToast(payload.message || 'Daily tasks fetch mein error.');
+          showToast(payload.message || 'Error fetching daily tasks.');
           tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">⚠️</div><p>${payload.message || 'Error loading daily tasks.'}</p></div></td></tr>`;
         }
       } catch (e) {
-        showToast('Network error — daily tasks load nahi hue.');
-        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📡</div><p>Network error. Retry karo.</p></div></td></tr>`;
+        showToast('Network error — Failed to load daily tasks.');
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📡</div><p>Network error. Please retry.</p></div></td></tr>`;
       }
     }
 
@@ -841,7 +841,7 @@
         <tr><td colspan="8">
           <div class="empty-state">
             <div class="empty-icon">📭</div>
-            <p>Koi daily task nahi mili.</p>
+            <p>No daily tasks assigned.</p>
           </div>
         </td></tr>`;
         return;
@@ -958,7 +958,7 @@
           closeReviewModal();
           loadDailyTasks();
         } else {
-          showToast(out.message || 'Action mein error.');
+          showToast(out.message || 'Action failed.');
         }
       } catch (e) {
         showToast('Network error.');
@@ -968,7 +968,7 @@
     }
 
     function doApprove() {
-      if (!window.confirm('Is daily task ko approve karna chahte ho?')) return;
+      if (!window.confirm('Are you sure you want to approve this daily task?')) return;
       const remark = document.getElementById('reviewRemarkInput').value.trim();
       postDailyTaskAction('approveDailyTask', { admin_remark: remark });
     }
@@ -976,17 +976,17 @@
     function doReject() {
       const remark = document.getElementById('reviewRemarkInput').value.trim();
       if (!remark) {
-        showToast('Rejection ke liye Admin Remark likhna zaroori hai.');
+        showToast('An Admin Remark is required for rejection.');
         return;
       }
-      if (!window.confirm('Is daily task ko reject karna chahte ho?')) return;
+      if (!window.confirm('Are you sure you want to reject this daily task?')) return;
       postDailyTaskAction('rejectDailyTask', { admin_remark: remark });
     }
 
     function doRequestCorrection() {
       const remark = document.getElementById('reviewRemarkInput').value.trim();
       if (!remark) {
-        showToast('Correction request ke liye Admin Remark likhna zaroori hai.');
+        showToast('An Admin Remark is required for correction requests.');
         return;
       }
       postDailyTaskAction('requestCorrectionDailyTask', { admin_remark: remark });

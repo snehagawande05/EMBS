@@ -900,7 +900,7 @@
 
       <div class="page-header">
         <h1 id="pageTitle">📊 Dashboard</h1>
-        <p id="pageSubtitle">Aapka overview load ho raha hai...</p>
+        <p id="pageSubtitle">Loading your overview..</p>
       </div>
 
       <div class="branch-badge" id="branchBadge">
@@ -1596,7 +1596,7 @@
       const outTime = document.getElementById('qaOutTime').value;
 
       if (!empId || !date || !inTime) {
-        showToast('Employee, Date aur In Time zaroori hain.');
+        showToast('Employee, Date, and In Time are required.');
         return;
       }
 
@@ -1669,7 +1669,7 @@
       const priority = document.getElementById('qtPriority').value;
 
       if (!title) {
-        showToast('Task title zaroori hai.');
+        showToast('Task title is required.');
         return;
       }
 
@@ -1748,7 +1748,7 @@
       const reason = document.getElementById('qlReason').value.trim();
 
       if (!empId || !fromDate || !toDate) {
-        showToast('Employee, From Date aur To Date zaroori hain.');
+        showToast('Employee, From Date, and To Date are required.');
         return;
       }
 

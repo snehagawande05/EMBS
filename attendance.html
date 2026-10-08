@@ -584,12 +584,12 @@
         await video.play();
         scanBox.style.display = 'flex';
         startBtn.style.display = 'none';
-        document.getElementById('scannerStatusMsg').textContent = 'Camera ready — QR code scan karo...';
+        document.getElementById('scannerStatusMsg').textContent = 'Camera ready — Scan QR code..';
         lastScannedCode = null;
         scanCooldown = false;
         requestAnimationFrame(tickScanLoop);
       } catch (err) {
-        showToast('Camera access denied ya available nahi hai.');
+        showToast('Camera access denied or unavailable.');
       }
     }
 
@@ -629,11 +629,11 @@
             setTimeout(() => {
               scanCooldown = false;
               lastScannedCode = null;
-              if (qrVideoStream) document.getElementById('scannerStatusMsg').textContent = 'Next QR scan kar sakte ho...';
+              if (qrVideoStream) document.getElementById('scannerStatusMsg').textContent = 'You can scan the next QR code..';
             }, 5000);
           }
         } else {
-          document.getElementById('scannerStatusMsg').textContent = '⚠️ Invalid QR — EBMS QR code use karo';
+          document.getElementById('scannerStatusMsg').textContent = '⚠️ Invalid QR — Please use an EBMS QR code';
         }
       }
 
@@ -673,12 +673,12 @@
           setTimeout(() => { video.style.borderColor = ''; }, 1200);
           loadAttendanceMasterLogs();
         } else {
-          showToast('❌ ' + (out.message || 'Punch error aaya.'));
-          document.getElementById('scannerStatusMsg').textContent = '❌ ' + (out.message || 'Error. Dobara try karo.');
+          showToast('❌ ' + (out.message || 'Punch error.'));
+          document.getElementById('scannerStatusMsg').textContent = '❌ ' + (out.message || 'Error. Please try again.');
         }
       } catch (err) {
-        showToast('Network error — punch register nahi hua.');
-        document.getElementById('scannerStatusMsg').textContent = '⚠️ Network error. Retry karo.';
+        showToast('Network error — Punch failed to register.');
+        document.getElementById('scannerStatusMsg').textContent = '⚠️ Network error. Please retry.';
       }
     }
 
@@ -724,7 +724,7 @@
         renderSummaryList(CURRENT_SUMMARY_VIEW);
 
       } catch (err) {
-        document.getElementById('todayPunchList').innerHTML = '<div style="text-align:center; color:#F87171; font-size:13px; padding:20px;">Load nahi ho saka. Network check karein.</div>';
+        document.getElementById('todayPunchList').innerHTML = '<div style="text-align:center; color:#F87171; font-size:13px; padding:20px;">Failed to load. Please check your network connection.</div>';
       }
     }
 
@@ -756,17 +756,17 @@
       if (type === 'present') {
         titleEl.textContent = '📋 Present Today';
         items = [...TODAY_LOGS].sort((a, b) => String(b['In-Time'] || '').replace(':', '').localeCompare(String(a['In-Time'] || '').replace(':', '')));
-        emptyMsg = 'Aaj koi punch record nahi mila.';
+        emptyMsg = 'No punch records found today.';
       } else if (type === 'out') {
         titleEl.textContent = '🔵 Punched Out Today';
         items = TODAY_LOGS.filter(l => l['Out-Time'] && String(l['Out-Time']).trim() !== '')
           .sort((a, b) => String(b['Out-Time'] || '').replace(':', '').localeCompare(String(a['Out-Time'] || '').replace(':', '')));
-        emptyMsg = 'Aaj tak kisi ne punch-out nahi kiya.';
+        emptyMsg = ' No one has punched out today.';
       } else if (type === 'absent') {
         titleEl.textContent = '🔴 Absent Today';
         const absentEmployees = activeEmployees.filter(emp => !presentEmails.has(String(emp.email || '').toLowerCase()));
         listEl.innerHTML = absentEmployees.length === 0
-          ? '<div style="text-align:center; color:var(--text-dim); font-size:13px; padding:20px;">Aaj sab present hain 🎉</div>'
+          ? '<div style="text-align:center; color:var(--text-dim); font-size:13px; padding:20px;">Everyone is present today 🎉</div>'
           : absentEmployees.map(emp => `
             <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:rgba(255,255,255,0.025); border-radius:10px; border:1px solid rgba(255,255,255,0.05); flex-wrap:wrap; gap:8px;">
               <div style="display:flex; align-items:center; gap:10px;">
@@ -865,7 +865,7 @@
     function renderAttendanceRowsMatrix(logsArray) {
       const container = document.getElementById('attendanceLogsContainer');
       if (!logsArray || logsArray.length === 0) {
-        container.innerHTML = `<tr><td colspan="6" style="padding:24px; text-align:center; color:var(--text-dim);">Koi logs nahi mile is filter ke liye.</td></tr>`;
+        container.innerHTML = `<tr><td colspan="6" style="padding:24px; text-align:center; color:var(--text-dim);">No logs found for this filter.</td></tr>`;
         return;
       }
       container.innerHTML = logsArray.map(log => {

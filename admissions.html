@@ -583,8 +583,7 @@
         <div class="header-block">
             <div class="title-area">
                 <h1>🎓 Admissions</h1>
-                <p>Student admission leads — inquiry se admission tak track karein. (Job candidates ke liye Recruitment
-                    Tracker use karein.)</p>
+                <p>Student admission leads — track from inquiry to admission. (For job candidates, use the Recruitment Tracker.)</p>
             </div>
             <button class="btn-add-lead" onclick="openAddLeadModal()">➕ Add Lead</button>
         </div>
@@ -774,7 +773,7 @@
                 </div>
                 <div class="form-group">
                     <label>Remark (optional)</label>
-                    <textarea id="statusRemark" placeholder="Kya baat hui, kya next step hai…"></textarea>
+                    <textarea id="statusRemark" placeholder="What was discussed, what is the next step…"></textarea>
                 </div>
                 <button class="btn-submit-lg" id="statusSubmitBtn" onclick="submitStatusUpdate()">✓ Update
                     Status</button>
@@ -844,12 +843,12 @@
                     updateStats(allLeads);
                     applyFilters();
                 } else {
-                    showToast(payload.message || 'Admission leads fetch mein error.');
+                    showToast(payload.message || 'Error in fetching admission leads');
                     tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">⚠️</div><p>${payload.message || 'Error loading leads.'}</p></div></td></tr>`;
                 }
             } catch (e) {
-                showToast('Network error — admission leads load nahi hue.');
-                tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📡</div><p>Network error. Retry karo.</p></div></td></tr>`;
+                showToast('Network error — admission leads did not load.');
+                tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📡</div><p>Network error. Retry.</p></div></td></tr>`;
             }
         }
 
@@ -913,7 +912,7 @@
         <tr><td colspan="7">
           <div class="empty-state">
             <div class="empty-icon">📭</div>
-            <p>Koi admission lead nahi mila.</p>
+            <p>No admission lead found.</p>
           </div>
         </td></tr>`;
                 return;
@@ -994,7 +993,7 @@
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const out = await res.json();
                 if (out.status === 'success') {
-                    showToast(out.message || (leadId ? 'Lead update ho gaya' : 'Lead add ho gaya'));
+                    showToast(out.message || (leadId ? 'Lead updated" : "Lead added'));
                     closeLeadModal();
                     loadLeads();
                 } else {
@@ -1039,7 +1038,7 @@
                 });
                 const out = await res.json();
                 if (out.status === 'success') {
-                    showToast(out.message || 'Status update ho gaya');
+                    showToast(out.message || 'Status is updated');
                     closeStatusModal();
                     loadLeads();
                 } else {
@@ -1056,7 +1055,7 @@
         async function archiveLead(leadId) {
             const l = allLeads.find(x => x.lead_id === leadId);
             if (!l) return;
-            if (!window.confirm(`"${l.name}" ko archive karna hai? Ye status ko "Archived" set kar dega — hard delete kabhi nahi hota.`)) return;
+            if (!window.confirm(`"${l.name}" Do you want to archive this? This will set the status to 'Archived' — hard delete never happens`)) return;
             try {
                 const res = await fetch(API_URL, {
                     method: 'POST',
@@ -1064,7 +1063,7 @@
                 });
                 const out = await res.json();
                 if (out.status === 'success') {
-                    showToast(out.message || 'Lead archive ho gaya');
+                    showToast(out.message || 'Lead archived');
                     loadLeads();
                 } else {
                     showToast(out.message || 'Error occurred.');

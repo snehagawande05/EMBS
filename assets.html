@@ -256,7 +256,7 @@
     <div class="header-block">
       <div class="title-area">
         <h1>💻 Company Assets Inventory</h1>
-        <p>Hardware devices (Laptops, Desktops) aur unke allocations manage karein</p>
+        <p>Manage hardware devices (laptops, desktops) and their allocations</p>
       </div>
       <button class="btn-action" id="addAssetBtn" style="display:none;" onclick="toggleAssetModal(true)">
         ➕ Register Asset
@@ -278,7 +278,7 @@
         <tbody id="assetsRowsContainer">
           <tr>
             <td colspan="6" style="padding:32px; text-align:center; color:var(--text-dim);">
-              Inventory sync ho rahi hai...
+              Syncing inventory...
             </td>
           </tr>
         </tbody>
@@ -351,7 +351,7 @@
           const arr = payload.data.data;
           if (!arr || arr.length === 0) {
             document.getElementById('assetsRowsContainer').innerHTML =
-              '<tr><td colspan="6" style="padding:28px; text-align:center; color:var(--text-dim);">Koi assets nahi hain abhi.</td></tr>';
+              '<tr><td colspan="6" style="padding:28px; text-align:center; color:var(--text-dim);">No assets available right now.</td></tr>';
             return;
           }
           document.getElementById('assetsRowsContainer').innerHTML = arr.map(a => `
@@ -369,7 +369,7 @@
             </tr>
           `).join('');
         }
-      } catch (e) { showToast('Assets fetch karne mein error.'); }
+      } catch (e) { showToast('Error fetching assets.'); }
     }
 
     async function submitAssetData(e) {
@@ -387,10 +387,10 @@
         const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
         const out = await res.json();
         if (out.status === 'success') {
-          showToast('Asset successfully register ho gaya!');
+          showToast('Asset registered successfully!');
           toggleAssetModal(false);
           loadAssets();
-        } else { showToast(out.message || 'Error aaya.'); }
+        } else { showToast(out.message || 'Error.'); }
       } catch (err) { showToast('Network error.'); }
     }
   </script>
