@@ -465,7 +465,7 @@
     <div class="header-block">
       <div class="title-area">
         <h1>📄 HR Documentation Center</h1>
-        <p>Employment letters generate karein — Offer, Appointment, aur Warning letters</p>
+        <p>Generate employment letters — Offer, Appointment, and Warning letters.</p>
       </div>
     </div>
 
@@ -489,7 +489,7 @@
           </div>
           <div class="form-group">
             <label>Custom Notes (Optional)</label>
-            <textarea id="docCustomNotes" placeholder="Additional clauses ya notes likhein..."></textarea>
+            <textarea id="docCustomNotes" placeholder=" Write additional clauses or notes...."></textarea>
           </div>
           <button type="submit" class="btn-generate" id="engineSubmitBtnLabelNode">
             ⚡ Generate Document
@@ -514,8 +514,8 @@
             <tbody id="documentsArchiveRowsContainer">
               <tr>
                 <td colspan="6" style="padding:32px; text-align:center; color:var(--text-dim);">
-                  Documents load ho rahe hain...
-                </td>
+                  Documents are loading...
+                 </td>
               </tr>
             </tbody>
           </table>
@@ -583,7 +583,7 @@
     function renderArchiveDatasetRowsGrid(dataMatrix) {
       const container = document.getElementById('documentsArchiveRowsContainer');
       if (!dataMatrix || dataMatrix.length === 0) {
-        container.innerHTML = `<tr><td colspan="6" style="padding:28px; text-align:center; color:var(--text-dim);">Koi documents nahi hain abhi.</td></tr>`;
+        container.innerHTML = `<tr><td colspan="6" style="padding:28px; text-align:center; color:var(--text-dim);"> There are no documents right now.</td></tr>`;
         return;
       }
       container.innerHTML = dataMatrix.map((doc, idx) => {
@@ -639,11 +639,11 @@
         const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
         const output = await res.json();
         if (output.status === 'success') {
-          showToast('Document successfully generate ho gaya!');
+          showToast('Document generated successfully!');
           document.getElementById('documentGenerationFormNode').reset();
           CURRENT_PAGE_TRACKER = 1;
           downloadGeneratedDocumentsArchive();
-        } else { showToast(output.message || 'Generation mein error.'); }
+        } else { showToast(output.message || 'Error in generation.'); }
       } catch (err) { showToast('Network error.'); }
       finally {
         btn.disabled = false;
@@ -655,7 +655,7 @@
       const doc = LOCAL_CACHED_ARCHIVE_DATA_MATRIX_ARRAY[idx];
       if (!doc) return;
       document.getElementById('viewerHeaderDocTitle').textContent = `📄 ${doc.doc_type} — [${doc.doc_id}]`;
-      document.getElementById('viewerContainerTextPlaneBody').textContent = doc.content || 'Content available nahi hai.';
+      document.getElementById('viewerContainerTextPlaneBody').textContent = doc.content || 'Content is not available.';
       document.getElementById('documentTextContentLiveViewerOverlay').style.display = 'flex';
     }
 

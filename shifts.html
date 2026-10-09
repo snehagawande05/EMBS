@@ -561,7 +561,7 @@
     <div class="header-block">
       <div class="title-area">
         <h1>🗓️ Shift Roster</h1>
-        <p>Employees ko shifts assign karein aur weekly/monthly roster dekhein.</p>
+        <p>Assign shifts to employees and view weekly or monthly rosters.</p>
       </div>
       <button class="btn-action" id="manageShiftsBtn" style="display:none;" onclick="toggleShiftTemplateModal(true)">⚙️
         Manage Shift Templates</button>
@@ -708,7 +708,7 @@
             shiftColorMap[s.shift_id] = SHIFT_COLOR_PALETTE[i % SHIFT_COLOR_PALETTE.length];
           });
         }
-      } catch (e) { showToast('Shift templates load nahi ho paye.'); }
+      } catch (e) { showToast('Failed to load shift templates.'); }
     }
 
     async function loadEmployees() {
@@ -719,7 +719,7 @@
           const arr = payload.data && payload.data.data ? payload.data.data : payload.data;
           employeesList = (arr || []).filter(e => e.status === 'active');
         }
-      } catch (e) { showToast('Employees load nahi ho paye.'); }
+      } catch (e) { showToast('Failed to load employees.'); }
     }
 
     async function loadRoster() {
@@ -730,11 +730,11 @@
         if (payload.status === 'success') {
           rosterAssignments = payload.data || [];
         } else {
-          showToast(payload.message || 'Roster load nahi ho paya.');
+          showToast(payload.message || 'Failed to load roster.');
           rosterAssignments = [];
         }
       } catch (e) {
-        showToast('Network error — roster load nahi ho paya.');
+        showToast('Network error — failed to load roster.');
         rosterAssignments = [];
       }
       renderGrid();
@@ -811,7 +811,7 @@
     function renderLegend() {
       const legend = document.getElementById('shiftLegend');
       if (shiftTemplates.length === 0) {
-        legend.innerHTML = '<span style="font-size:12px; color:var(--text-dim);">Koi shift templates nahi hain abhi.</span>';
+        legend.innerHTML = '<span style="font-size:12px; color:var(--text-dim);">No shift templates available.</span>';
         return;
       }
       legend.innerHTML = shiftTemplates.map(s => {
@@ -850,7 +850,7 @@
       const tbody = document.getElementById('rosterTableBody');
       if (employeesList.length === 0) {
         tbody.innerHTML = `<tr><td colspan="${dates.length + 1}">
-          <div class="empty-state"><div class="empty-icon">👥</div><p>Koi active employees nahi mile.</p></div>
+          <div class="empty-state"><div class="empty-icon">👥</div><p>No active employees found.</p></div>
         </td></tr>`;
         return;
       }
@@ -916,7 +916,7 @@
 
       const list = document.getElementById('shiftOptionList');
       if (shiftTemplates.length === 0) {
-        list.innerHTML = '<p style="font-size:13px; color:var(--text-dim);">Koi shift templates nahi hain. Pehle "Manage Shift Templates" se ek banayein.</p>';
+        list.innerHTML = '<p style="font-size:13px; color:var(--text-dim);">No shift templates found. Please create one first from "Manage Shift Templates".</p>';
       } else {
         list.innerHTML = shiftTemplates.map(s => `
           <div class="shift-option" onclick="assignShiftToCell('${s.shift_id}')">
@@ -951,7 +951,7 @@
         });
         const out = await res.json();
         if (out.status === 'success') {
-          showToast('Shift assign ho gayi!');
+          showToast('Shift assigned successfully!');
           toggleAssignModal(false);
           loadRoster();
         } else {
@@ -969,7 +969,7 @@
         });
         const out = await res.json();
         if (out.status === 'success') {
-          showToast('Shift remove ho gayi.');
+          showToast('Shift removed successfully!');
           toggleAssignModal(false);
           loadRoster();
         } else {
@@ -988,7 +988,7 @@
     function renderExistingShiftsList() {
       const list = document.getElementById('existingShiftsList');
       if (shiftTemplates.length === 0) {
-        list.innerHTML = '<p style="font-size:13px; color:var(--text-dim);">Koi shift templates nahi hain abhi.</p>';
+        list.innerHTML = '<p style="font-size:13px; color:var(--text-dim);">No shift templates available.</p>';
         return;
       }
       list.innerHTML = shiftTemplates.map(s => `
@@ -1015,7 +1015,7 @@
         const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
         const out = await res.json();
         if (out.status === 'success') {
-          showToast('Shift template add ho gaya!');
+          showToast('Shift template added successfully!');
           document.getElementById('newShiftForm').reset();
           await loadShiftTemplates();
           renderLegend();

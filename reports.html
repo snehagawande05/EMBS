@@ -578,7 +578,7 @@
         const res = await fetch(url, { cache: 'no-store' });
         const payload = await res.json();
         if (payload.status !== 'success') {
-          showToast(payload.message || 'Report generate nahi ho saka.');
+          showToast(payload.message || 'Failed to generate report.');
           tbody.innerHTML = `<tr><td><div class="empty-state"><div class="empty-icon">⚠️</div><p>${payload.message || 'Error generating report.'}</p></div></td></tr>`;
           return;
         }

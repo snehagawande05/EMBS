@@ -496,7 +496,7 @@
     <div class="header-block">
       <div class="title-area">
         <h1>💰 Salary Setup</h1>
-        <p>Employee salary structures configure karein aur pay slips generate karein</p>
+        <p>Configure employee salary structures and generate payslips</p>
       </div>
     </div>
 
@@ -616,7 +616,7 @@
                 <td colspan="8">
                   <div class="empty-state">
                     <div class="empty-icon">💰</div>
-                    <p>Salary structures load ho rahi hain...</p>
+                    <p>Loading salary structures....</p>
                   </div>
                 </td>
               </tr>
@@ -738,7 +738,7 @@
     function renderRows(data) {
       const tbody = document.getElementById('salaryRowsContainer');
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📭</div><p>Koi salary structures nahi mili.</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📭</div><p> No salary structures found.</p></div></td></tr>`;
         return;
       }
 
@@ -815,7 +815,7 @@
           document.getElementById('salaryPreviewBox').style.display = 'none';
           loadSalaries();
         } else {
-          showToast(out.message || 'Save mein error.');
+          showToast(out.message || 'Failed to save changes.');
         }
       } catch (err) {
         showToast('Network error.');
@@ -851,10 +851,10 @@
         const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
         const out = await res.json();
         if (out.status === 'success') {
-          showToast('Salary slip generated! Salary Slips page pe dekh sakte ho.');
+          showToast('Payslip generated successfully. You can view it on the Salary Slips page.');
           toggleGenModal(false);
         } else {
-          showToast(out.message || 'Generation mein error.');
+          showToast(out.message || 'Failed to generate payslip.');
         }
       } catch (err) {
         showToast('Network error.');

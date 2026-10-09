@@ -248,7 +248,7 @@
 
     <div class="header-block title-area">
       <h1>⚙️ Settings</h1>
-      <p>Company-wide configuration — branches aur account security. Yeh saara kaam rarely hota hai (jaise saal me ek baar), isliye alag rakha gaya hai.</p>
+      <p>Company-wide configuration — manage branches and account security. These administrative settings are kept separate as they are updated infrequently (e.g., annually).</p>
     </div>
 
     <div class="settings-tabs" id="settingsTabs">
@@ -262,7 +262,7 @@
       <div class="panel-header">
         <div>
           <h2>Branches</h2>
-          <p>Add new branches, edit details, ya activate/deactivate purani branches.</p>
+          <p>Add new branches, edit details, or activate/deactivate existing branches.</p>
         </div>
         <button class="btn-action" onclick="openAddBranchModal()">➕ Add New Branch</button>
       </div>
@@ -286,7 +286,7 @@
       <div class="panel-header">
         <div>
           <h2>Business Settings</h2>
-          <p>Company-wide tunable values — leave policy, targets, etc. Koi bhi change turant apply hota hai, redeploy ki zaroorat nahi.</p>
+          <p>Company-wide tunable values — leave policies, targets, and global settings. Any changes take effect immediately without requiring a redeploy.</p>
         </div>
       </div>
       <div class="table-container">
@@ -308,7 +308,7 @@
       <div class="panel-header">
         <div>
           <h2>Change Password</h2>
-          <p>Apna account password update karein.</p>
+          <p>Update your account password.</p>
         </div>
       </div>
       <div class="password-card">
@@ -363,7 +363,7 @@
         switchTab('password');
         const note = document.createElement('div');
         note.className = 'restricted-note';
-        note.textContent = 'Branches sirf Super Admin edit kar sakte hain.';
+        note.textContent = 'Only Super Admins can edit branches.';
         document.getElementById('panel-password').prepend(note);
       } else {
         loadBranches();
@@ -387,13 +387,13 @@
         } else {
           showToast(payload.message);
         }
-      } catch (e) { showToast('Branches fetch karne me dikkat aayi.'); }
+      } catch (e) { showToast('Failed to load branches.'); }
     }
 
     function renderBranchesTable() {
       const container = document.getElementById('branchesRowsContainer');
       if (!branchesCache.length) {
-        container.innerHTML = '<tr><td colspan="8" class="empty-note">Koi branch nahi mili.</td></tr>';
+        container.innerHTML = '<tr><td colspan="8" class="empty-note">No branches found.</td></tr>';
         return;
       }
       container.innerHTML = branchesCache.map(b => `
@@ -461,7 +461,7 @@
         const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
         const out = await res.json();
         if (out.status === 'success') {
-          showToast(isEdit ? 'Branch update ho gayi!' : 'Branch successfully add ho gayi!');
+          showToast(isEdit ? 'Branch updated successfully!' : 'Branch added successfully!');
           closeBranchModal();
           loadBranches();
         } else {
@@ -473,15 +473,14 @@
     async function toggleBranchStatus(branchId, currentStatus) {
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
       const label = newStatus === 'active' ? 'activate' : 'deactivate';
-      if (!confirm(`Is branch ko ${label} karna hai?`)) return;
-
+      if (!confirm(`Are you sure you want to ${label.toLowerCase()} this branch?`)) return;
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
           body: JSON.stringify({ token: TOKEN, action: 'updateBranch', branch_id: branchId, status: newStatus })
         });
         const out = await res.json();
-        if (out.status === 'success') { showToast('Branch status update ho gaya!'); loadBranches(); }
+        if (out.status === 'success') { showToast('Branch status updated successfully!'); loadBranches(); }
         else showToast(out.message);
       } catch (err) { showToast('Network connectivity error.'); }
     }
@@ -507,7 +506,7 @@
     function renderSettingsTable() {
       const container = document.getElementById('settingsRowsContainer');
       if (!settingsCache.length) {
-        container.innerHTML = '<tr><td colspan="5" class="empty-note">Koi setting nahi mili — Apps Script editor me setupSettingsSheet() ek baar run karo.</td></tr>';
+        container.innerHTML = '<tr><td colspan="5" class="empty-note">No settings found — please run setupSettingsSheet() once in the Apps Script editor.</td></tr>';
         return;
       }
       container.innerHTML = settingsCache.map(s => `
@@ -527,7 +526,7 @@
     async function saveSetting(key) {
       const input = document.getElementById('setting-' + key);
       const newValue = input.value.trim();
-      if (newValue === '') { showToast('Value khaali nahi ho sakti.'); return; }
+      if (newValue === '') { showToast('The value cannot be empty.'); return; }
 
       try {
         const res = await fetch(API_URL, {
@@ -536,7 +535,7 @@
         });
         const out = await res.json();
         if (out.status === 'success') {
-          showToast(`${key} update ho gayi!`);
+          showToast(`${key} Updated successfully!`);
           loadSettings();
         } else {
           showToast(out.message);
@@ -552,7 +551,7 @@
       const confirmPassword = document.getElementById('confirmPassword').value;
 
       if (newPassword !== confirmPassword) {
-        showToast('New password aur Confirm password match nahi kar rahe.');
+        showToast('New password and Confirm password do not match.');
         return;
       }
 
@@ -563,7 +562,7 @@
         });
         const out = await res.json();
         if (out.status === 'success') {
-          showToast('Password successfully change ho gaya!');
+          showToast('Password changed successfully!');
           document.getElementById('passwordForm').reset();
         } else {
           showToast(out.message);

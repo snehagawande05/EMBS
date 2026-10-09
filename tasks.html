@@ -949,7 +949,7 @@
     <div class="header-block">
       <div class="title-area">
         <h1>📋 Task Board</h1>
-        <p>Tasks create karein, employees ko assign karein, aur submissions review karein</p>
+        <p>Create tasks, assign them to employees, and review submissions.</p>
       </div>
       <button class="btn-action" id="createTaskBtn" style="display:none;" onclick="openCreateModal()">
         ➕ New Task
@@ -1086,7 +1086,7 @@
         <div id="reviewSubDate" style="font-size:12px;color:var(--text-dim);margin-bottom:16px;"></div>
 
         <div class="form-group">
-          <label>Review Note (Rejection ke liye required)</label>
+          <label>Review Note (Required for Rejection)</label>
           <textarea id="reviewNoteInput" rows="3" placeholder="Feedback ya rejection reason likhein..."></textarea>
         </div>
 
@@ -1174,22 +1174,22 @@
           ALL_TASKS = (payload.data && payload.data.data) || payload.data || [];
           renderBoard();
         } else {
-          showToast(payload.message || 'Tasks load nahi hue.');
+          showToast(payload.message || 'Tasks failed to load.');
           clearBoard();
         }
       } catch (e) {
-        showToast('Tasks load nahi ho paye.');
+        showToast('Tasks failed to load.');
         clearBoard();
       }
     }
 
     function clearBoard() {
       ['colProg', 'colVerify', 'colDone'].forEach(id => {
-        document.getElementById(id).innerHTML = '<div class="empty-col">Koi task nahi.</div>';
+        document.getElementById(id).innerHTML = '<div class="empty-col">No tasks found..</div>';
       });
       // TO DO always shows the add button for admins
       document.getElementById('colTodo').innerHTML =
-        '<div class="empty-col">Koi task nahi.</div>' +
+        '<div class="empty-col">No tasks found.</div>' +
         '<button class="col-add-btn" onclick="openCreateModal()">➕ New Task</button>';
     }
 
@@ -1224,9 +1224,9 @@
       const col = document.getElementById(colId);
       if (tasks.length === 0) {
         let emptyMsg = 'Koi task nahi.';
-        if (colType === 'todo') emptyMsg = ALL_TASKS.length > 0 ? '✨ Sab tasks assign ho gaye!' : 'Abhi koi task nahi. Neeche se create karein.';
-        if (colType === 'verify') emptyMsg = 'Koi submission pending nahi.';
-        if (colType === 'done') emptyMsg = 'Abhi tak koi completed task nahi.';
+        if (colType === 'todo') emptyMsg = ALL_TASKS.length > 0 ? '✨ All tasks assigned! / No tasks available right now. Create one below.';
+        if (colType === 'verify') emptyMsg = 'No submissions pending.';
+        if (colType === 'done') emptyMsg = 'No completed tasks yet.';
         col.innerHTML = `<div class="empty-col">${emptyMsg}</div>`;
         if (colType === 'todo') {
           col.innerHTML += `<button class="col-add-btn" onclick="openCreateModal()">➕ New Task</button>`;
@@ -1261,7 +1261,7 @@
           </button>
           <div class="assign-inline" id="assignForm_${t.task_id}">
             <select class="assign-select" id="assignEmp_${t.task_id}">
-              <option value="">Employee chunein…</option>
+              <option value="">Select Employee</option>
             </select>
             <button class="btn-card btn-assign" id="assignGo_${t.task_id}" onclick="doAssignTask('${t.task_id}')">→</button>
           </div>`;
@@ -1354,11 +1354,11 @@
       if (!employees || employees.length === 0) {
         // Fallback: employee list not available — let admin type the ID manually.
         sel.outerHTML = `<input class="assign-input" id="assignEmp_${taskId}" placeholder="Employee ID, e.g. EMP004"/>`;
-        showToast('Employee list load nahi hui — ID manually daal dein.', 4000);
+        showToast('Employee list failed to load — please enter the ID manually.', 4000);
         return;
       }
 
-      sel.innerHTML = '<option value="">Employee chunein…</option>' +
+      sel.innerHTML = '<option value="">Select Employee</option>' +
         employees.map(emp => {
           const id = emp.emp_id || emp.employee_id || '';
           const name = emp.name || emp.full_name || id;
@@ -1381,7 +1381,7 @@
     async function doAssignTask(taskId) {
       const empField = document.getElementById('assignEmp_' + taskId);
       const empId = (empField?.value || '').trim();
-      if (!empId) { showToast('Employee chunein ya ID enter karein.'); return; }
+      if (!empId) { showToast('Select an employee or enter their ID.'); return; }
 
       const goBtn = document.getElementById('assignGo_' + taskId);
       if (goBtn) { goBtn.disabled = true; goBtn.innerHTML = '<span class="btn-spin"></span>'; }
@@ -1393,12 +1393,12 @@
         });
         const out = await res.json();
         if (out.status === 'success') {
-          showBoardLoading('Task assign ho raha hai...');
+          showBoardLoading('Assigning task...');
           await loadTasks(); // waits until the task actually shows up in IN PROGRESS
           hideBoardLoading();
-          showToast('Task assign ho gaya! ✓');
+          showToast('Task assigned successfully! ✓');
         } else {
-          showToast(out.message || 'Error aaya.');
+          showToast(out.message || 'Error.');
           if (goBtn) { goBtn.disabled = false; goBtn.innerHTML = '→'; }
         }
       } catch (e) {
@@ -1409,7 +1409,7 @@
 
     // ── Revoke task ───────────────────────────────────────────
     async function doRevokeTask(taskId) {
-      if (!confirm('Is task ki assignment revoke karein?')) return;
+      if (!confirm('Revoke task assignment?')) return;
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
@@ -1417,11 +1417,11 @@
         });
         const out = await res.json();
         if (out.status === 'success') {
-          showBoardLoading('Assignment revoke ho rahi hai...');
+          showBoardLoading('Revoking assignment.....');
           await loadTasks();
           hideBoardLoading();
-          showToast('Task revoke ho gaya.');
-        } else { showToast(out.message || 'Error aaya.'); }
+          showToast('Task revoked successfully!.');
+        } else { showToast(out.message || 'Error.'); }
       } catch (e) { showToast('Network error.'); }
     }
 
@@ -1472,11 +1472,11 @@
         const out = await res.json();
         if (out.status === 'success') {
           closeReviewModal();
-          showBoardLoading('Submission accept ho rahi hai...');
+          showBoardLoading('Accepting submission...');
           await loadTasks();
           hideBoardLoading();
-          showToast('Submission accept ho gayi! ✓');
-        } else { showToast(out.message || 'Error aaya.'); }
+          showToast('Submission accepted! ✓');
+        } else { showToast(out.message || 'Error.'); }
       } catch (e) { showToast('Network error.'); }
       finally { btn.disabled = false; btn.textContent = '✓ Accept'; }
     }
@@ -1484,7 +1484,7 @@
     async function doRejectSubmission() {
       if (!activeReviewTaskId) return;
       const note = document.getElementById('reviewNoteInput').value.trim();
-      if (!note) { showToast('Rejection reason likhna zaruri hai!'); return; }
+      if (!note) { showToast('A rejection reason is required!'); return; }
       const btn = document.getElementById('btnReject');
       btn.disabled = true; btn.textContent = 'Rejecting...';
       try {
@@ -1499,11 +1499,11 @@
         const out = await res.json();
         if (out.status === 'success') {
           closeReviewModal();
-          showBoardLoading('Submission reject ho rahi hai...');
+          showBoardLoading('Rejecting submission...');
           await loadTasks();
           hideBoardLoading();
-          showToast('Submission reject kar di gayi.');
-        } else { showToast(out.message || 'Error aaya.'); }
+          showToast('Submission rejected.');
+        } else { showToast(out.message || 'Error.'); }
       } catch (e) { showToast('Network error.'); }
       finally { btn.disabled = false; btn.textContent = '✕ Reject'; }
     }
@@ -1524,7 +1524,7 @@
 
     async function doCreateTask() {
       const title = document.getElementById('tTitle').value.trim();
-      if (!title) { showToast('Task title required hai.'); return; }
+      if (!title) { showToast('Task title is required.'); return; }
       const btn = document.getElementById('createBtn');
       btn.disabled = true; btn.textContent = 'Creating...';
       try {
@@ -1542,11 +1542,11 @@
         const out = await res.json();
         if (out.status === 'success') {
           closeCreateModal();
-          showBoardLoading('Task banaya ja raha hai...');
+          showBoardLoading('Creating task...');
           await loadTasks(); // waits until the new task actually shows up in TO DO
           hideBoardLoading();
-          showToast('Task create ho gaya! ✓');
-        } else { showToast(out.message || 'Error aaya.'); }
+          showToast('Task created successfully! ✓');
+        } else { showToast(out.message || 'Error.'); }
       } catch (e) { showToast('Network error.'); }
       finally { btn.disabled = false; btn.textContent = 'Create Task'; }
     }

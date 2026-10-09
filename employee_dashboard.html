@@ -1884,7 +1884,7 @@
     <div class="glass-card punch-status-card" id="punchStatusCard" style="border-color:rgba(255,255,255,0.09);">
       <div class="punch-status-top">
         <div style="display:flex; align-items:center; gap:10px;">
-          <div class="section-label" style="margin-bottom:0;">✅ Aaj Ki Attendance</div>
+          <div class="section-label" style="margin-bottom:0;">✅ Today's Attendance</div>
           <div id="punchLiveBadge"
             style="display:none; align-items:center; gap:5px; padding:3px 10px; border-radius:99px; font-size:11px; font-weight:600; background:rgba(52,211,153,0.12); color:#34D399; border:1px solid rgba(52,211,153,0.25);">
             <span
@@ -3654,7 +3654,7 @@
           showToast('Work submitted! Admin will review it. ✓');
           closeSubmitModal();
           loadTasks();
-        } else { showToast(out.message || 'Error aaya.'); }
+        } else { showToast(out.message || 'Error.'); }
       } catch (e) { showToast('Network error.'); }
       finally { btn.disabled = false; btn.textContent = 'Submit Work 📤'; }
     }
@@ -3689,7 +3689,7 @@
         document.getElementById('lsPending').textContent   = s.pending;
         document.getElementById('lsApproved').textContent  = s.approved;
         document.getElementById('lsRejected').textContent  = s.rejected;
-      } catch (e) { showToast('Leave summary load karne me dikkat aayi.'); }
+      } catch (e) { showToast('Failed to load leave summary.'); }
     }
 
     /* ── My Target (Phase 11 §7.8) ── */
@@ -3710,7 +3710,7 @@
       try {
         const res = await fetch(`${API_URL}?action=getEmployeeTargets&token=${TOKEN}&limit=50&_ts=${Date.now()}`, { cache: 'no-store' });
         const payload = await res.json();
-        if (payload.status !== 'success') { showToast(payload.message || 'Target load nahi hua.'); return; }
+        if (payload.status !== 'success') { showToast(payload.message || 'Target did not load.'); return; }
 
         MY_TARGETS = (payload.data && payload.data.data) || [];
         if (MY_TARGETS.length === 0) {
@@ -3731,7 +3731,7 @@
         contentWrap.style.display = 'block';
         renderSelectedTarget();
       } catch (e) {
-        showToast('Target load karne me network error.');
+        showToast('Network error while loading target.');
       }
     }
 

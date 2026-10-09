@@ -41,8 +41,8 @@
     <div class="header-block">
       <div class="title-area">
         <h1>🧑‍💼 Recruitment Tracker</h1>
-        <p>Registered candidates ki pipeline yahan dikhti hai — step by step approve karein.</p>
-      </div>
+        <p>The pipeline of registered candidates is displayed here — approve step by step.</p>
+       </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <a class="btn-secondary" href="hr_dashboard.html"
           style="text-decoration:none; display:inline-flex; align-items:center;">← Back to Dashboard</a>
@@ -355,7 +355,7 @@
     function renderPipeline(candidates) {
       const tbody = document.getElementById('candidatesTableBody');
       if (!candidates.length) {
-        tbody.innerHTML = `<tr><td colspan="4" class="table-empty-hint">Koi candidate nahi mila</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="table-empty-hint">No candidate found.</td></tr>`;
         return;
       }
       const sorted = [...candidates].sort(
@@ -535,7 +535,7 @@
         });
         const out = await res.json();
         if (out.status === 'success') {
-          showToast('✓ Stage update ho gaya: ' + (STAGE_LABELS[newStage] || newStage));
+          showToast('✓ Stage updated.: ' + (STAGE_LABELS[newStage] || newStage));
           const idx = allCandidates.findIndex(c => c.candidate_id === candidateId);
           if (idx !== -1) allCandidates[idx].stage = newStage;
           updateStats();
@@ -610,7 +610,7 @@
         hireLookupsLoaded = true;
 
         if (!hireDepartments.length && !hireDesignations.length && !hireBranches.length) {
-          showToast('Hire form ke dropdowns load nahi ho paye — network/permission error. Page refresh karke dobara try karein.');
+          showToast('Failed to load hire form dropdowns — network/permission error. Please refresh the page and try again.');
         }
       })();
       return hireLookupsLoading;
@@ -699,7 +699,7 @@
       const branchId = document.getElementById('hireBranch').value;
       const departmentId = document.getElementById('hireDepartment').value;
       if (!branchId || !departmentId) {
-        showToast('Branch aur Department dono select karna zaroori hai.');
+        showToast('Both Branch and Department must be selected.');
         return;
       }
 

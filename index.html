@@ -623,13 +623,13 @@
           window.location.href = destination;
         } else {
           hideLoginLoader();
-          showAlert(data.message || 'Login fail hua. Dobara try karein.');
+          showAlert(data.message || 'Login failed. Please try again.');
           btn.disabled = false;
           btn.textContent = 'Sign in to EBMS';
         }
       } catch (err) {
         hideLoginLoader();
-        showAlert('Network error. Connection check karein.');
+        showAlert('Network error. Please check your connection.');
         btn.disabled = false;
         btn.textContent = 'Sign in to EBMS';
       }

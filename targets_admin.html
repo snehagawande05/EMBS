@@ -565,14 +565,14 @@
     <div class="header-block">
       <div class="title-area">
         <h1>🎯 HR Targets</h1>
-        <p>Admin har HR ko monthly admission target deta hai — Assigned / Achieved / Remaining / Progress % yahan track hota hai</p>
+        <p>Admins set monthly admission targets for each HR, tracking Assigned, Achieved, Remaining, and Progress percentage here.</p>
       </div>
       <button class="btn-primary" id="assignTargetBtn" onclick="openAssignModal()">➕ Assign Target</button>
     </div>
 
     <!-- Shown to HR viewers (read-only) — they see their own target(s) only -->
     <div class="banner-note" id="hrReadOnlyBanner">
-      👀 Yeh aapka apna monthly target hai (read-only). Sirf Admin naya target assign ya edit kar sakta hai.
+      👀 This is your personal monthly target (read-only). Only the admin can assign or edit a new target.
     </div>
 
     <!-- Stats -->
@@ -654,7 +654,7 @@
         <div class="form-group" id="fgHr">
           <label>HR User</label>
           <select id="tmHr"></select>
-          <div class="form-hint">Sirf active HR-role users hi list mein aate hain.</div>
+          <div class="form-hint">Only users with an active HR role appear in the list.</div>
         </div>
         <div style="display:flex; gap:12px;">
           <div class="form-group" style="flex:1;">
@@ -670,7 +670,7 @@
           <label>Assigned Target (Admissions)</label>
           <input type="number" id="tmAssigned" min="0"
             placeholder="Leave blank to use the business-default (Settings)" />
-          <div class="form-hint">Achieved count us HR ke naam par assigned admission leads se live-compute hota hai (status = "Admission Completed").</div>
+          <div class="form-hint">The achieved count is live-computed from admission leads assigned to that HR (status = "Admission Completed").</div>
         </div>
         <div class="form-group" id="fgStatus" style="display:none;">
           <label>Status</label>
@@ -908,7 +908,7 @@
           };
         } else {
           const hrId = document.getElementById('tmHr').value;
-          if (!hrId) { showToast('HR user select karo.'); btn.disabled = false; btn.textContent = originalLabel; return; }
+          if (!hrId) { showToast('Please select an HR user.'); btn.disabled = false; btn.textContent = originalLabel; return; }
           payload = {
             token: TOKEN,
             action: 'assignHrTarget',

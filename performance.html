@@ -485,7 +485,7 @@
     <div class="header-block">
       <div class="title-area">
         <h1>🎯 Performance Reviews</h1>
-        <p>Employee KPI scores aur monthly performance evaluations track karein</p>
+        <p>Track employee KPI scores and monthly performance evaluations.</p>
       </div>
       <button class="btn-action" id="addPerfBtn" style="display:none;" onclick="togglePerfModal(true)">
         ➕ Grade Scorecard
@@ -567,7 +567,7 @@
             <td colspan="7">
               <div class="empty-state">
                 <div class="empty-icon">🎯</div>
-                <p>KPI records load ho rahe hain...</p>
+                <p>Loading KPI records...</p>
               </div>
             </td>
           </tr>
@@ -703,7 +703,7 @@
           updateStats(allRecords);
           renderRows(allRecords);
         } else {
-          showToast(payload.message || 'Performance data fetch nahi hui.');
+          showToast(payload.message || 'Failed to fetch performance data..');
         }
       } catch (e) {
         showToast('Network error.');
@@ -739,7 +739,7 @@
     function renderRows(data) {
       const tbody = document.getElementById('perfRowsContainer');
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📭</div><p>Koi performance records nahi mile.</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📭</div><p>No performance records found.</p></div></td></tr>`;
         return;
       }
 
@@ -808,7 +808,7 @@
           togglePerfModal(false);
           loadPerformance();
         } else {
-          showToast(out.message || 'Save mein error.');
+          showToast(out.message || 'Failed to save changes..');
         }
       } catch (err) {
         showToast('Network error.');

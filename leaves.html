@@ -476,7 +476,7 @@
     <div class="header-block">
       <div class="title-area">
         <h1>📅 Leave Requests</h1>
-        <p>Employee leave applications ko manage aur approve karein</p>
+        <p>Manage and approve employee leave applications.</p>
       </div>
       <button class="btn-action" id="applyLeaveBtn" onclick="toggleLeaveModal(true)">➕ Apply Leave</button>
     </div>
@@ -656,12 +656,12 @@
 
           applyFilters();
         } else {
-          showToast(payload.message || 'Leaves fetch mein error.');
+          showToast(payload.message || 'Error fetching leaves..');
           tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">⚠️</div><p>${payload.message || 'Error loading leaves.'}</p></div></td></tr>`;
         }
       } catch (e) {
-        showToast('Network error — leaves load nahi hue.');
-        tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📡</div><p>Network error. Retry karo.</p></div></td></tr>`;
+        showToast('Network error — failed to load leaves.');
+        tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📡</div><p>Network error. Please retry..</p></div></td></tr>`;
       }
     }
 
@@ -696,7 +696,7 @@
         <tr><td colspan="10">
           <div class="empty-state">
             <div class="empty-icon">📭</div>
-            <p>Koi leave request nahi mili.</p>
+            <p>No leave requests found.</p>
           </div>
         </td></tr>`;
         return;
@@ -748,13 +748,12 @@
     }
 
     // ── Confirm dialog before approve/reject ────────────────────────────
-    function confirmLeaveAction(leaveId, newStatus, empName) {
-      const actionLabel = newStatus === 'approved' ? '✅ Approve' : '❌ Reject';
-      const msg = `${empName} ki leave request ko ${actionLabel} karna chahte ho?`;
-      if (!window.confirm(msg)) return;
-      updateLeaveStatus(leaveId, newStatus);
-    }
-
+     function confirmLeaveAction(leaveId, newStatus, empName) {
+  const actionLabel = newStatus === 'approved' ? 'Approve' : 'Reject';
+  const msg = `Are you sure you want to ${actionLabel.toLowerCase()} the leave request for ${empName}?`;
+  if (!window.confirm(msg)) return;
+  updateLeaveStatus(leaveId, newStatus);
+}
     async function updateLeaveStatus(leaveId, newStatus) {
       const action = newStatus === 'approved' ? 'approveLeave' : 'rejectLeave';
       try {
@@ -767,7 +766,7 @@
           showToast(newStatus === 'approved' ? '✅ Leave approved!' : '❌ Leave rejected.');
           loadLeaves();
         } else {
-          showToast(out.message || 'Status update mein error.');
+          showToast(out.message || 'Error updating status.');
         }
       } catch (e) {
         showToast('Network error.');
@@ -819,11 +818,11 @@
         const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
         const out = await res.json();
         if (out.status === 'success') {
-          showToast('✅ Leave request submit ho gayi!');
+          showToast('✅ Leave request submitted successfully!');
           toggleLeaveModal(false);
           loadLeaves();
         } else {
-          showToast(out.message || 'Submission mein error.');
+          showToast(out.message || 'Error submitting request.');
         }
       } catch (err) {
         showToast('Network error.');

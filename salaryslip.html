@@ -555,7 +555,7 @@
     <div class="header-block">
       <div class="title-area">
         <h1>🧾 Salary Slips Archive</h1>
-        <p>Generated payslips dekho, download karo aur print karo</p>
+        <p>View, download, and print generated payslips</p>
       </div>
     </div>
 
@@ -629,7 +629,7 @@
             <td colspan="9">
               <div class="empty-state">
                 <div class="empty-icon">🧾</div>
-                <p>Salary slips load ho rahi hain...</p>
+                <p>Loading payslips...</p>
               </div>
             </td>
           </tr>
@@ -769,7 +769,7 @@
           updateStats(allSlips);
           renderRows(allSlips);
         } else {
-          showToast(payload.message || 'Slips fetch nahi hui.');
+          showToast(payload.message || 'Failed to load payslips.');
         }
       } catch (e) {
         showToast('Network error.');
@@ -801,7 +801,7 @@
     function renderRows(data) {
       const tbody = document.getElementById('slipsRowsContainer');
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📭</div><p>Koi salary slips nahi mili.</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📭</div><p>No payslips found.</p></div></td></tr>`;
         return;
       }
 
@@ -859,7 +859,7 @@
           document.getElementById('slipOverlay').style.display = 'flex';
           document.getElementById('slipOverlay').scrollTop = 0;
         } else {
-          showToast(payload.message || 'Slip open nahi ho sakla.');
+          showToast(payload.message || 'Failed to open payslip.');
         }
       } catch (e) {
         showToast('Network error.');
