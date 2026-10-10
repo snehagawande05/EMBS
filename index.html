@@ -589,7 +589,7 @@
     async function doLogin() {
       const email    = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
-      if (!email || !password) { showAlert('Email aur password dono enter karein.'); return; }
+      if (!email || !password) { showAlert('Please enter both your email and password..'); return; }
 
       const btn = document.getElementById('loginBtn');
       btn.disabled = true;

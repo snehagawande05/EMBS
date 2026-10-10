@@ -1101,6 +1101,27 @@
     let META = { total_branches: 0, monthly_salary_expense: 0 };
     let selectedBranchId = 'all';
 
+    // Attendance rows from the backend use the Name / Phone / Email / Date / In-Time / Out-Time format.
+    // This converts them into the shape the rest of this page already expects.
+    let RAW_ATTENDANCE_TODAY = [];
+
+    function rebuildAttendanceToday() {
+      ALL_ATTENDANCE_TODAY = RAW_ATTENDANCE_TODAY.map(row => {
+        const email = String(row['Email'] || '').trim().toLowerCase();
+        const emp = ALL_EMPLOYEES.find(e => String(e.email || '').trim().toLowerCase() === email);
+        return {
+          att_id: email + '|' + (row['Date'] || ''),
+          emp_id: emp ? emp.emp_id : email,
+          branch_id: emp ? emp.branch_id : '',
+          in_time: row['In-Time'] ? formatTime12Hour(row['In-Time']) : '',
+          out_time: row['Out-Time'] ? formatTime12Hour(row['Out-Time']) : '',
+          late_minutes: 0,
+          method: 'QR',
+          remarks: ''
+        };
+      });
+    }
+
     function getTodayIST() {
       const now = new Date();
       const istDate = new Date(now.getTime() + 330 * 60000);
@@ -1155,7 +1176,7 @@
         const res = await fetch(`${API_URL}?action=getAttendance&token=${AppSession.getToken()}&date=${getTodayIST()}&limit=1000`);
         const data = await res.json();
         if (data.status === 'success' && data.data && data.data.data) {
-          ALL_ATTENDANCE_TODAY = data.data.data;
+          RAW_ATTENDANCE_TODAY = data.data.data;
         }
       } catch (e) { }
     }
@@ -1227,6 +1248,7 @@
     }
 
     function renderEverything() {
+      rebuildAttendanceToday();
       renderStats();
       renderPresentEmployees();
       renderWorkList();
@@ -1731,7 +1753,7 @@
           <label class="qform-label">Reason (optional)</label>
           <input type="text" class="qform-input" id="qlReason" placeholder="e.g. Personal work">
         </div>
-        <div class="qform-note">📌 Days apne aap calculate honge — company holidays automatically exclude ho jaayenge (Phase 10).</div>
+        <div class="qform-note">📌 Days will be calculated automatically — company holidays will be excluded automatically. (Phase 10).</div>
         <div class="qform-actions">
           <button class="qform-btn qform-btn-secondary" onclick="closeQuickAddModal()">Cancel</button>
           <button class="qform-btn qform-btn-primary" onclick="submitQuickLeave()">Apply Leave</button>

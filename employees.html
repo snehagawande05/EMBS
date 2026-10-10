@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -1427,6 +1427,8 @@
                                 <option value="branch_manager">Branch Manager View</option>
                             </select>
                         </div>
+                        <div class="form-group"><label>Aadhaar Number</label><input type="text" id="formAadhaar" maxlength="12" inputmode="numeric" placeholder="12-digit Aadhaar number" /></div>
+                        <div class="form-group"><label>PAN Number</label><input type="text" id="formPan" maxlength="10" placeholder="e.g. ABCDE1234F" style="text-transform:uppercase;" /></div>
                         <div class="form-group"><label>Password</label><input type="text" id="formPassword"
                                 placeholder="Default: Emp@123" /></div>
                         <div class="form-group" style="grid-column: 1 / -1;"><label>Residential Address</label><input
@@ -1456,13 +1458,13 @@
                     <canvas id="qrActualCanvas" style="border-radius:12px; background:#fff; padding:12px;"></canvas>
                 </div>
                 <div style="font-size:11px; color:var(--text-dim); margin-bottom:16px; line-height:1.6;">
-                    Scan this on the QR Attendance Console<br />Punch In / Punch Out will be registered automatically
+                    Yeh QR Attendance Console pe scan karo<br />Punch In / Punch Out automatically register hoga
                 </div>
                 <button onclick="downloadQrCard()"
                     style="background:rgba(255,255,255,0.09);border:1px solid var(--glass-border);color:#fff;padding:9px 22px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:600;font-family:'Inter',sans-serif;width:100%;transition:background 0.18s;"
                     onmouseover="this.style.background='rgba(255,255,255,0.15)'"
                     onmouseout="this.style.background='rgba(255,255,255,0.09)'">
-                    ⬇️ Download the QR
+                    ⬇️ QR Download Karo
                 </button>
             </div>
         </div>
@@ -1818,6 +1820,8 @@
                 salary_type: document.getElementById('formSalaryType').value,
                 role: document.getElementById('formUserRole').value,
                 password: document.getElementById('formPassword').value || 'Emp@123',
+                aadhaar: document.getElementById('formAadhaar').value.trim(),
+                pan: document.getElementById('formPan').value.trim().toUpperCase(),
                 address: document.getElementById('formAddress').value
             };
 
@@ -2009,8 +2013,6 @@
                             <div class="pd-grid">
                                 <div class="pd-field"><label>Email</label><div class="pd-value muted">${node.email || '—'}</div></div>
                                 <div class="pd-field"><label>Joining Date</label><div class="pd-value muted">${pdFormatJoiningDate(node.joining_date)}</div></div>
-                                <div class="pd-field"><label>Aadhaar Number</label><div class="pd-value muted">${node.aadhaar || '—'}</div></div>
-                                <div class="pd-field"><label>PAN Number</label><div class="pd-value muted">${node.pan || '—'}</div></div>
                                 <div class="pd-field full">
                                     <label>Weekly Off</label>
                                     <div class="pd-value muted">${node.weekly_off || 'Not set'}</div>
@@ -2072,7 +2074,17 @@
                                         ${pdShiftTemplatesList.map(s => `<option value="${s.shift_id}" ${String(node.default_shift_id) === String(s.shift_id) ? 'selected' : ''}>${s.shift_name} (${s.start_time || '—'}–${s.end_time || '—'})</option>`).join('')}
                                     </select>
                                 </div>
-                                <!-- 🎂 DOB [2026-09-27]: editable from the profile drawer -->
+                                <div class="pd-field">
+                                    <label>Aadhaar Number</label>
+                                    <div class="pd-value" id="pdLblAadhaar">${node.aadhaar || '—'}</div>
+                                    <input type="text" id="pdInputAadhaar" class="pd-input" maxlength="12" inputmode="numeric" placeholder="12-digit Aadhaar number" value="${node.aadhaar || ''}" />
+                                </div>
+                                <div class="pd-field">
+                                    <label>PAN Number</label>
+                                    <div class="pd-value" id="pdLblPan">${node.pan || '—'}</div>
+                                    <input type="text" id="pdInputPan" class="pd-input" maxlength="10" placeholder="e.g. ABCDE1234F" style="text-transform:uppercase;" value="${node.pan || ''}" />
+                                </div>
+                                <!-- DOB: editable from the profile drawer -->
                                 <div class="pd-field">
                                     <label>Date of Birth</label>
                                     <div class="pd-value" id="pdLblDob">${node.dob ? pdFormatJoiningDate(node.dob) : '—'}</div>
@@ -2137,6 +2149,8 @@
                 default_shift_id: document.getElementById('pdInputShift').value,
                 dob: document.getElementById('pdInputDob').value,          // 🎂 NEW
                 mobile: document.getElementById('pdInputMobile').value,
+                aadhaar: document.getElementById('pdInputAadhaar').value.trim(),
+                pan: document.getElementById('pdInputPan').value.trim().toUpperCase(),
                 address: document.getElementById('pdInputAddress').value
             };
             try {

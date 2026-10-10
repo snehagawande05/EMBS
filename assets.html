@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -216,7 +216,16 @@
       border-color: rgba(255,255,255,0.22);
       background: var(--glass-strong);
     }
-    .form-group select option { background: #1a1a1c; color: var(--text-primary); }
+
+    /* Dark dropdown so option text is clearly readable */
+    .form-group select {
+      background-color: #1a1a1c;
+      color-scheme: dark;
+    }
+    .form-group select option {
+      background: #1a1a1c;
+      color: #F4F4F5;
+    }
 
     .btn-submit {
       width: 100%;
@@ -328,11 +337,25 @@
   <script src="app.js"></script>
   <script>
     AppSession.protect();
-    const TOKEN = AppSession.getToken();
-    const USER  = AppSession.getUser();
+
+    // PAGE_* names avoid clashing with variables already declared in app.js.
+    // A clash throws "already been declared" and stops this whole script,
+    // which leaves the table stuck on "Syncing inventory...".
+    const PAGE_TOKEN = AppSession.getToken();
+    const PAGE_USER = AppSession.getUser() || {};
+
+    // Fallback toast in case app.js does not provide one
+    if (typeof showToast !== 'function') {
+      window.showToast = function (msg) { alert(msg); };
+    }
+
+    function setAssetsMessage(msg) {
+      document.getElementById('assetsRowsContainer').innerHTML =
+        `<tr><td colspan="6" style="padding:28px; text-align:center; color:var(--text-dim);">${msg}</td></tr>`;
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
-      if (USER.role === 'super_admin' || USER.role === 'hr') {
+      if (PAGE_USER.role === 'super_admin' || PAGE_USER.role === 'hr') {
         document.getElementById('addAssetBtn').style.display = 'inline-flex';
       }
       loadAssets();
@@ -344,38 +367,51 @@
     }
 
     async function loadAssets() {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 20000); // 20s timeout
       try {
-        const res     = await fetch(`${API_URL}?action=getAssets&token=${TOKEN}`);
+        const res = await fetch(`${API_URL}?action=getAssets&token=${PAGE_TOKEN}`, { signal: ctrl.signal });
         const payload = await res.json();
-        if (payload.status === 'success') {
-          const arr = payload.data.data;
-          if (!arr || arr.length === 0) {
-            document.getElementById('assetsRowsContainer').innerHTML =
-              '<tr><td colspan="6" style="padding:28px; text-align:center; color:var(--text-dim);">No assets available right now.</td></tr>';
-            return;
-          }
-          document.getElementById('assetsRowsContainer').innerHTML = arr.map(a => `
-            <tr>
-              <td><code>${a.asset_id}</code></td>
-              <td><strong>${a.asset_name}</strong></td>
-              <td>${a.asset_type}</td>
-              <td><code>${a.serial_no}</code></td>
-              <td>${a.assigned_to || '<span style="color:var(--text-dim);">Pool Available</span>'}</td>
-              <td>
-                <span class="status-badge ${a.status === 'assigned' ? 'badge-assigned' : 'badge-available'}">
-                  ${a.status}
-                </span>
-              </td>
-            </tr>
-          `).join('');
+
+        if (payload.status !== 'success') {
+          setAssetsMessage(payload.message || 'Failed to load assets.');
+          return;
         }
-      } catch (e) { showToast('Error fetching assets.'); }
+
+        const raw = (payload.data && payload.data.data) || payload.data || [];
+        const arr = Array.isArray(raw) ? raw : [];
+
+        if (arr.length === 0) {
+          setAssetsMessage('No assets available right now.');
+          return;
+        }
+
+        document.getElementById('assetsRowsContainer').innerHTML = arr.map(a => `
+          <tr>
+            <td><code>${a.asset_id}</code></td>
+            <td><strong>${a.asset_name}</strong></td>
+            <td>${a.asset_type}</td>
+            <td><code>${a.serial_no}</code></td>
+            <td>${a.assigned_to || '<span style="color:var(--text-dim);">Pool Available</span>'}</td>
+            <td>
+              <span class="status-badge ${a.status === 'assigned' ? 'badge-assigned' : 'badge-available'}">
+                ${a.status}
+              </span>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error('loadAssets error:', e);
+        setAssetsMessage(e.name === 'AbortError' ? 'Server is slow, please refresh.' : 'Error fetching assets.');
+      } finally {
+        clearTimeout(timer);
+      }
     }
 
     async function submitAssetData(e) {
       e.preventDefault();
       const payload = {
-        token:       TOKEN,
+        token:       PAGE_TOKEN,
         action:      'addAsset',
         asset_name:  document.getElementById('aName').value,
         asset_type:  document.getElementById('aType').value,

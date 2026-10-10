@@ -993,8 +993,8 @@
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const out = await res.json();
                 if (out.status === 'success') {
-                    showToast(out.message || (leadId ? 'Lead updated" : "Lead added'));
-                    closeLeadModal();
+                    showToast(out.message || (leadId ? 'Lead updated' : 'Lead added'));
+                     closeLeadModal();
                     loadLeads();
                 } else {
                     showToast(out.message || 'Error occurred.');

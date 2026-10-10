@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -867,7 +867,7 @@
       }
     }
 
-    /* Board-level loading overlay — shown between "action succeeded" and
+    /* Board-level loading overlay: shown between "action succeeded" and
        "board re-rendered with fresh data" (create task, assign task, etc.) */
     .board-wrap {
       position: relative;
@@ -924,16 +924,28 @@
       vertical-align: middle;
     }
 
-    .assign-select {
-      background: var(--glass);
-      border: 1px solid var(--glass-border);
-      color: var(--text-primary);
-      border-radius: 8px;
-      padding: 6px 8px;
-      font-size: 12px;
-      font-family: inherit;
-      max-width: 140px;
-    }
+     .assign-select {
+  background: #1a1a1c;
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  max-width: 140px;
+  color-scheme: dark;
+}
+
+.assign-select option {
+  background: #1a1a1c;
+  color: #F4F4F5;
+}
+
+.assign-select option:checked,
+.assign-select option:hover {
+  background: #2a2a2e;
+  color: #FFFFFF;
+}
   </style>
 </head>
 
@@ -1087,7 +1099,7 @@
 
         <div class="form-group">
           <label>Review Note (Required for Rejection)</label>
-          <textarea id="reviewNoteInput" rows="3" placeholder="Feedback ya rejection reason likhein..."></textarea>
+          <textarea id="reviewNoteInput" rows="3" placeholder="Write your feedback or rejection reason..."></textarea>
         </div>
 
         <div class="review-actions">
@@ -1125,7 +1137,7 @@
         </div>
         <div class="form-group">
           <label>Description</label>
-          <textarea id="tDesc" rows="3" placeholder="Task details likhein..."></textarea>
+          <textarea id="tDesc" rows="3" placeholder="Write task details..."></textarea>
         </div>
         <button class="btn-submit" id="createBtn" onclick="doCreateTask()">Create Task</button>
       </div>
@@ -1138,14 +1150,41 @@
   <script src="app.js"></script>
   <script>
     AppSession.protect();
-    const TOKEN = AppSession.getToken();
-    const USER = AppSession.getUser();
 
-    // tasks.html is an admin-only page — treat all roles except 'employee' as admin.
-    // Using a function so it re-evaluates after AppSession is fully ready.
-    function checkIsAdmin() { return USER.role !== 'employee'; }
-    const IS_ADMIN = checkIsAdmin();
+    // Page-specific names (PAGE_*) are used on purpose so they can never clash
+    // with variables that app.js already declares (TOKEN, USER, IS_ADMIN, ...).
+    // A clash would throw "already been declared" and stop this whole script,
+    // which leaves the board stuck on the loading skeleton.
+    const PAGE_TOKEN = AppSession.getToken();
+    const PAGE_USER = AppSession.getUser();
 
+    // Incomplete session (token exists but user data is missing) -> redirect to login
+    if (!PAGE_TOKEN || !PAGE_USER) {
+      localStorage.clear();
+      window.location.href = 'index.html';
+    }
+
+    // tasks.html is an admin-only page: treat all roles except 'employee' as admin.
+    const PAGE_IS_ADMIN = !!PAGE_USER && PAGE_USER.role !== 'employee';
+
+// Safe date helpers: return '' for empty or invalid dates instead of "Invalid Date"
+ function parseDateSafe(value) {
+  if (!value) return null;
+  // Support dd/mm/yyyy or dd-mm-yyyy strings
+  const m = String(value).trim().match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+  const d = m ? new Date(+m[3], +m[2] - 1, +m[1]) : new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function fmtDate(value, opts) {
+  const d = parseDateSafe(value);
+  return d ? d.toLocaleDateString('en-IN', opts) : '';
+}
+
+function fmtDateTime(value, opts) {
+  const d = parseDateSafe(value);
+  return d ? d.toLocaleString('en-IN', opts) : '';
+}
     const priorityClass = { high: 'badge-high', medium: 'badge-medium', low: 'badge-low' };
 
     let ALL_TASKS = [];
@@ -1154,48 +1193,61 @@
     // ── Toast ─────────────────────────────────────────────────
     function showToast(msg, dur = 3000) {
       const el = document.getElementById('toastEl');
-      el.textContent = msg; el.classList.add('show');
+      el.textContent = msg;
+      el.classList.add('show');
       setTimeout(() => el.classList.remove('show'), dur);
     }
 
     // ── Init ──────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
-      // Always show on this page — employees shouldn't reach tasks.html anyway
+      // Always show on this page: employees should not reach tasks.html anyway
       document.getElementById('createTaskBtn').style.display = 'inline-flex';
       loadTasks();
     });
 
-    // ── Load tasks ────────────────────────────────────────────
+    // ── Load tasks (with timeout so the skeleton never hangs forever) ──
     async function loadTasks() {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 20000); // 20s timeout
       try {
-        const res = await fetch(`${API_URL}?action=getTasks&token=${TOKEN}&limit=300`);
+        const res = await fetch(
+          `${API_URL}?action=getTasks&token=${PAGE_TOKEN}&limit=300`,
+          { signal: ctrl.signal }
+        );
         const payload = await res.json();
         if (payload.status === 'success') {
-          ALL_TASKS = (payload.data && payload.data.data) || payload.data || [];
+          const d = (payload.data && payload.data.data) || payload.data || [];
+          ALL_TASKS = Array.isArray(d) ? d : [];
           renderBoard();
         } else {
           showToast(payload.message || 'Tasks failed to load.');
           clearBoard();
         }
       } catch (e) {
-        showToast('Tasks failed to load.');
+        console.error('loadTasks error:', e);
+        showToast(e.name === 'AbortError' ? 'Server is slow, please retry.' : 'Tasks failed to load.');
         clearBoard();
+      } finally {
+        clearTimeout(timer);
       }
     }
 
     function clearBoard() {
       ['colProg', 'colVerify', 'colDone'].forEach(id => {
-        document.getElementById(id).innerHTML = '<div class="empty-col">No tasks found..</div>';
+        document.getElementById(id).innerHTML = '<div class="empty-col">No tasks found.</div>';
       });
-      // TO DO always shows the add button for admins
       document.getElementById('colTodo').innerHTML =
         '<div class="empty-col">No tasks found.</div>' +
         '<button class="col-add-btn" onclick="openCreateModal()">➕ New Task</button>';
+
+      ['statTotal', 'statInProg', 'statVerify', 'statDone'].forEach(id => {
+        document.getElementById(id).textContent = '0';
+      });
     }
 
     // ── Render Board ──────────────────────────────────────────
     function renderBoard() {
-      const todo = ALL_TASKS.filter(t => t.status === 'todo' || t.status === 'pending' && !t.assigned_to);
+      const todo = ALL_TASKS.filter(t => t.status === 'todo' || (t.status === 'pending' && !t.assigned_to));
       // in_progress: assigned but not submitted
       const prog = ALL_TASKS.filter(t => t.status === 'in_progress' || (t.status === 'pending' && t.assigned_to));
       const verify = ALL_TASKS.filter(t => t.status === 'in_review');
@@ -1223,8 +1275,10 @@
     function renderCol(colId, tasks, colType) {
       const col = document.getElementById(colId);
       if (tasks.length === 0) {
-        let emptyMsg = 'Koi task nahi.';
-        if (colType === 'todo') emptyMsg = ALL_TASKS.length > 0 ? '✨ All tasks assigned! / No tasks available right now. Create one below.';
+        let emptyMsg = 'No tasks.';
+        if (colType === 'todo') emptyMsg = ALL_TASKS.length > 0
+          ? '✨ All tasks assigned! Create a new one below.'
+          : 'No tasks available right now. Create one below.';
         if (colType === 'verify') emptyMsg = 'No submissions pending.';
         if (colType === 'done') emptyMsg = 'No completed tasks yet.';
         col.innerHTML = `<div class="empty-col">${emptyMsg}</div>`;
@@ -1240,15 +1294,12 @@
     }
 
     function renderCard(t, colType) {
-      const dueDate = t.due_date ? new Date(t.due_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '';
-      const isOverdue = t.due_date && new Date(t.due_date) < new Date() && t.status !== 'completed';
+        const dueDate = fmtDate(t.due_date, { day: '2-digit', month: 'short', year: 'numeric' });
       const pClass = priorityClass[t.priority] || 'badge-low';
       const descHtml = t.description
         ? `<div class="card-desc">${(t.description || '').slice(0, 80)}${t.description.length > 80 ? '…' : ''}</div>`
         : '';
-      const dueHtml = dueDate
-        ? `<span class="card-due${isOverdue ? ' overdue' : ''}">📅 ${dueDate}${isOverdue ? ' ⚠️' : ''}</span>`
-        : '';
+       const dueHtml = `<span class="card-due">📅 ${dueDate || 'No due date'}</span>`;
 
       let actionsHtml = '';
       let extraHtml = '';
@@ -1274,9 +1325,7 @@
       }
 
       if (colType === 'verify') {
-        const subDate = t.submission_date
-          ? new Date(t.submission_date).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
-          : '—';
+         const subDate = fmtDateTime(t.submission_date, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) || '—';
         extraHtml = `
           <div class="sub-preview">
             🔗 <a href="${t.submission_link}" target="_blank" rel="noopener">${(t.submission_link || '').slice(0, 45)}${(t.submission_link || '').length > 45 ? '…' : ''}</a>
@@ -1290,9 +1339,7 @@
       }
 
       if (colType === 'done') {
-        const reviewDate = t.review_date
-          ? new Date(t.review_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-          : '';
+         const reviewDate = fmtDate(t.review_date, { day: '2-digit', month: 'short', year: 'numeric' });
         extraHtml = `
           <div class="review-info">
             <span>✓ Accepted</span>${t.reviewed_by ? ` by <code>${t.reviewed_by}</code>` : ''}${reviewDate ? ` · ${reviewDate}` : ''}
@@ -1325,19 +1372,21 @@
     // ── Employees (for assign dropdown) ──────────────────────
     let EMPLOYEES_CACHE = null; // null = not fetched yet, [] = fetched but empty/failed
     async function fetchEmployees() {
-      if (EMPLOYEES_CACHE) return EMPLOYEES_CACHE;
+      if (EMPLOYEES_CACHE && EMPLOYEES_CACHE.length > 0) return EMPLOYEES_CACHE;
       try {
         // NOTE: assumes a backend action `getEmployees` exists (list of
         // { employee_id, name }). Adjust the action name here if your
         // Employees module uses a different one.
-        const res = await fetch(`${API_URL}?action=getEmployees&token=${TOKEN}&limit=500&status=active`);
+        const res = await fetch(`${API_URL}?action=getEmployees&token=${PAGE_TOKEN}&limit=500&status=active`);
         const payload = await res.json();
         if (payload.status === 'success') {
-          EMPLOYEES_CACHE = (payload.data && payload.data.data) || payload.data || [];
+          const d = (payload.data && payload.data.data) || payload.data || [];
+          EMPLOYEES_CACHE = Array.isArray(d) ? d : [];
         } else {
           EMPLOYEES_CACHE = [];
         }
       } catch (e) {
+        console.error('fetchEmployees error:', e);
         EMPLOYEES_CACHE = [];
       }
       return EMPLOYEES_CACHE;
@@ -1352,9 +1401,9 @@
       const employees = await fetchEmployees();
 
       if (!employees || employees.length === 0) {
-        // Fallback: employee list not available — let admin type the ID manually.
+        // Fallback: employee list not available, let the admin type the ID manually.
         sel.outerHTML = `<input class="assign-input" id="assignEmp_${taskId}" placeholder="Employee ID, e.g. EMP004"/>`;
-        showToast('Employee list failed to load — please enter the ID manually.', 4000);
+        showToast('Employee list failed to load. Please enter the ID manually.', 4000);
         return;
       }
 
@@ -1389,7 +1438,7 @@
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
-          body: JSON.stringify({ token: TOKEN, action: 'assignTask', task_id: taskId, assigned_to: empId })
+          body: JSON.stringify({ token: PAGE_TOKEN, action: 'assignTask', task_id: taskId, assigned_to: empId })
         });
         const out = await res.json();
         if (out.status === 'success') {
@@ -1413,14 +1462,14 @@
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
-          body: JSON.stringify({ token: TOKEN, action: 'revokeTask', task_id: taskId })
+          body: JSON.stringify({ token: PAGE_TOKEN, action: 'revokeTask', task_id: taskId })
         });
         const out = await res.json();
         if (out.status === 'success') {
-          showBoardLoading('Revoking assignment.....');
+          showBoardLoading('Revoking assignment...');
           await loadTasks();
           hideBoardLoading();
-          showToast('Task revoked successfully!.');
+          showToast('Task revoked successfully!');
         } else { showToast(out.message || 'Error.'); }
       } catch (e) { showToast('Network error.'); }
     }
@@ -1444,9 +1493,8 @@
       } else {
         noteWrap.style.display = 'none';
       }
-      document.getElementById('reviewSubDate').textContent = t.submission_date
-        ? '📅 Submitted: ' + new Date(t.submission_date).toLocaleString('en-IN')
-        : '';
+      const subStr = fmtDateTime(t.submission_date);
+      document.getElementById('reviewSubDate').textContent = subStr ? '📅 Submitted: ' + subStr : '';
       document.getElementById('reviewNoteInput').value = '';
       document.getElementById('reviewModal').classList.add('open');
     }
@@ -1464,7 +1512,7 @@
         const res = await fetch(API_URL, {
           method: 'POST',
           body: JSON.stringify({
-            token: TOKEN, action: 'acceptSubmission',
+            token: PAGE_TOKEN, action: 'acceptSubmission',
             task_id: activeReviewTaskId,
             review_note: document.getElementById('reviewNoteInput').value.trim()
           })
@@ -1491,7 +1539,7 @@
         const res = await fetch(API_URL, {
           method: 'POST',
           body: JSON.stringify({
-            token: TOKEN, action: 'rejectSubmission',
+            token: PAGE_TOKEN, action: 'rejectSubmission',
             task_id: activeReviewTaskId,
             review_note: note
           })
@@ -1531,7 +1579,7 @@
         const res = await fetch(API_URL, {
           method: 'POST',
           body: JSON.stringify({
-            token: TOKEN, action: 'addTask',
+            token: PAGE_TOKEN, action: 'addTask',
             title,
             assigned_to: '',
             due_date: document.getElementById('tDate').value,

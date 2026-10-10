@@ -199,9 +199,18 @@
       backdrop-filter: blur(var(--glass-blur));
     }
 
-    .filter-bar select option {
-      background: #1a1a1e;
-    }
+     .filter-bar select,
+.form-group select {
+  background-color: #1a1a1e;
+  color: #F4F4F5;
+  color-scheme: dark;
+}
+
+.filter-bar select option,
+.form-group select option {
+  background: #1a1a1e;
+  color: #F4F4F5;
+}
 
     .filter-bar .btn-refresh {
       background: var(--glass-strong);

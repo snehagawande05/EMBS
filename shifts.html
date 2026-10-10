@@ -713,7 +713,7 @@
 
     async function loadEmployees() {
       try {
-        const res = await fetch(`${API_URL}?action=getEmployees&token=${TOKEN}`);
+        const res = await fetch(`${API_URL}?action=getEmployees&token=${TOKEN}&limit=1000`);
         const payload = await res.json();
         if (payload.status === 'success') {
           const arr = payload.data && payload.data.data ? payload.data.data : payload.data;
@@ -742,7 +742,11 @@
 
     // ---------- DATE RANGE HELPERS ----------
     function toDateStr(d) {
-      return d.toISOString().split('T')[0];
+      // Use local date parts. toISOString() converts to UTC, which moves the date one day back in IST.
+      const y = d.getFullYear();
+      const mo = String(d.getMonth() + 1).padStart(2, '0');
+      const dy = String(d.getDate()).padStart(2, '0');
+      return `${y}-${mo}-${dy}`;
     }
 
     // Backend sends assignment dates as "dd-MM-yyyy" (display format, via

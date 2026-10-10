@@ -461,6 +461,35 @@
     .empty-state p {
       font-size: 14px;
     }
+  .stat-card {
+      cursor: pointer;
+      transition: border-color 0.18s, background 0.18s, transform 0.18s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .stat-card.stat-active {
+      border-color: rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .stat-card[data-filter="pending"].stat-active {
+      border-color: rgba(251, 191, 36, 0.5);
+      background: rgba(251, 191, 36, 0.07);
+    }
+
+    .stat-card[data-filter="approved"].stat-active {
+      border-color: rgba(52, 211, 153, 0.5);
+      background: rgba(52, 211, 153, 0.07);
+    }
+
+    .stat-card[data-filter="rejected"].stat-active {
+      border-color: rgba(248, 113, 113, 0.5);
+      background: rgba(248, 113, 113, 0.07);
+    }
   </style>
 </head>
 
@@ -613,6 +642,7 @@
         if (empIdGroup) empIdGroup.style.display = 'none';
       }
       // Pehle employees load karo naam mapping ke liye, phir leaves
+      initStatCardFilters();
       loadEmployeeNames().then(() => loadLeaves());
     });
 
@@ -680,6 +710,29 @@
       }
     }
 
+    // The stat cards work as quick filters: clicking one sets the Status filter.
+    const STAT_CARD_FILTERS = ['', 'pending', 'approved', 'rejected'];
+
+    function initStatCardFilters() {
+      document.querySelectorAll('#statsRow .stat-card').forEach((card, i) => {
+        card.dataset.filter = STAT_CARD_FILTERS[i];
+        card.addEventListener('click', () => {
+          document.getElementById('filterStatus').value = STAT_CARD_FILTERS[i];
+          applyFilters();
+        });
+      });
+    }
+
+    // Highlights only the card that matches the current Status filter.
+    function syncStatCards() {
+      const current = document.getElementById('filterStatus').value;
+      document.querySelectorAll('#statsRow .stat-card').forEach(card => {
+        card.style.border = '';
+        card.style.background = '';
+        card.classList.toggle('stat-active', card.dataset.filter === current);
+      });
+    }
+
     function applyFilters() {
       const status = document.getElementById('filterStatus').value;
       const type = document.getElementById('filterType').value;
@@ -687,6 +740,7 @@
       if (status) filtered = filtered.filter(l => l.status === status);
       if (type) filtered = filtered.filter(l => l.leave_type === type);
       renderRows(filtered);
+      syncStatCards();
     }
 
     function renderRows(data) {
@@ -705,8 +759,8 @@
       const isManager = USER.role !== 'employee';
 
       tbody.innerHTML = data.map(l => {
-        const from = l.from_date ? new Date(l.from_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '—';
-        const to   = l.to_date   ? new Date(l.to_date).toLocaleDateString('en-IN',   { day: '2-digit', month: 'short' }) : '—';
+        const from = l.from_date ? parseLeaveDate(l.from_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '—';
+        const to   = l.to_date   ? parseLeaveDate(l.to_date).toLocaleDateString('en-IN',   { day: '2-digit', month: 'short' }) : '—';
         const days = l.days || '—';
 
         // Employee ka naam dikhao, fallback emp_id
@@ -714,7 +768,7 @@
 
         // Applied on date
         const appliedOn = l.applied_on
-          ? new Date(l.applied_on).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })
+          ? parseLeaveDate(l.applied_on).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })
           : '—';
 
         const badgeClass =
@@ -771,6 +825,15 @@
       } catch (e) {
         showToast('Network error.');
       }
+    }
+
+    // The backend sends dates as dd-MM-yyyy. new Date() reads that as MM-dd-yyyy,
+    // which swaps day and month, or returns Invalid Date. This parses it correctly.
+    function parseLeaveDate(str) {
+      const s = String(str || '').trim();
+      const m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+      if (m) return new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+      return new Date(s);
     }
 
     function calculateLeaveDays(fromStr, toStr) {
