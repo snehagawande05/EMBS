@@ -1281,6 +1281,64 @@
         .pd-cal-legend-dot.hasshift {
             background: var(--accent-glow);
         }
+            /* ── Employee photo: Add form upload row + table/profile avatars ── */
+        .photo-upload-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .photo-upload-preview {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--glass-strong);
+            border: 1.5px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .photo-upload-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-upload-input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .photo-upload-hint {
+            font-size: 11.5px;
+            color: var(--text-dim);
+            margin-top: 6px;
+        }
+
+        .avatar-placeholder {
+            overflow: hidden;
+        }
+
+        .avatar-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    /* Dark dropdown lists for the profile drawer selects (Employment Type, Shift, Weekly Off) */
+        .pd-field select.pd-input,
+        .pd-weekly-off-setter select {
+            color-scheme: dark;
+        }
+
+        .pd-field select.pd-input option,
+        .pd-weekly-off-setter select option {
+            background: #18181B;
+            color: #fff;
+        }
     </style>
 </head>
 
@@ -1426,6 +1484,16 @@
                                 <option value="hr">HR Executive Console</option>
                                 <option value="branch_manager">Branch Manager View</option>
                             </select>
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Employee Photo</label>
+                            <div class="photo-upload-row">
+                                <div class="photo-upload-preview" id="formPhotoPreview">👤</div>
+                                <div class="photo-upload-input">
+                                    <input type="file" id="formPhoto" accept="image/*" onchange="previewFormPhoto(this)" />
+                                    <div class="photo-upload-hint">JPG or PNG, up to 2 MB (optional)</div>
+                                </div>
+                            </div>
                         </div>
                         <div class="form-group"><label>Aadhaar Number</label><input type="text" id="formAadhaar" maxlength="12" inputmode="numeric" placeholder="12-digit Aadhaar number" /></div>
                         <div class="form-group"><label>PAN Number</label><input type="text" id="formPan" maxlength="10" placeholder="e.g. ABCDE1234F" style="text-transform:uppercase;" /></div>
@@ -1624,9 +1692,64 @@
             }
         }
 
+        // ── Employee photo helpers ──────────────────────────────
+        const EMP_PHOTO_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
+        
+        // Google Drive "view" links cannot be used directly in an <img> tag.
+        // This turns any Drive link into an image URL the browser can display.
+        function driveImageSrc(url) {
+            if (!url) return '';
+            const s = String(url).trim();
+            if (/drive\.google\.com|docs\.google\.com/.test(s)) {
+                const m = s.match(/\/d\/([a-zA-Z0-9_-]{10,})/) || s.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+                if (m) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w256`;
+            }
+            return s;
+        }
+        
+        // Avatar markup for the directory table: photo if there is one, otherwise initials.
+        function empAvatarHtml(emp, initials) {
+            const src = driveImageSrc(emp.photo_url);
+            if (!src) return initials;
+            return `<img src="${src}" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('${initials}'))" />`;
+        }
+        
+        function empFileToDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        function resetFormPhotoPreview() {
+            const box = document.getElementById('formPhotoPreview');
+            if (box) box.textContent = '👤';
+        }
+        
+        function previewFormPhoto(input) {
+            const file = input.files && input.files[0];
+            if (!file) { resetFormPhotoPreview(); return; }
+            if (!file.type.startsWith('image/')) {
+                showToast('Please choose an image file.');
+                input.value = ''; resetFormPhotoPreview(); return;
+            }
+            if (file.size > EMP_PHOTO_MAX_BYTES) {
+                showToast('Photo must be 2 MB or smaller.');
+                input.value = ''; resetFormPhotoPreview(); return;
+            }
+            const box = document.getElementById('formPhotoPreview');
+            box.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.alt = '';
+            box.appendChild(img);
+        }
+        
         function toggleModal(isVisible) {
             document.getElementById('addEmployeeModal').style.display = isVisible ? 'flex' : 'none';
-            if (!isVisible) document.getElementById('newEmployeeForm').reset();
+            if (!isVisible) { document.getElementById('newEmployeeForm').reset(); resetFormPhotoPreview(); }
         }
 
         // ✅ Add-Employee Department / Designation dropdowns used to be a
@@ -1758,7 +1881,7 @@
         <tr>
           <td>
             <div class="identity-badge">
-              <div class="avatar-placeholder">${initials}</div>
+              <div class="avatar-placeholder">${empAvatarHtml(emp, initials)}</div>
               <div><div style="font-weight:600;">${emp.name}</div><div style="font-size:12px; color:var(--text-muted);">${emp.email}</div></div>
             </div>
           </td>
@@ -1824,6 +1947,16 @@
                 pan: document.getElementById('formPan').value.trim().toUpperCase(),
                 address: document.getElementById('formAddress').value
             };
+
+            // Optional photo: sent as a data URL, same pattern as the bank passbook upload.
+            const photoInput = document.getElementById('formPhoto');
+            if (photoInput && photoInput.files && photoInput.files[0]) {
+                const photoFile = photoInput.files[0];
+                payload.photo_file_base64 = await empFileToDataUrl(photoFile);
+                payload.photo_file_name = photoFile.name;
+                payload.photo_mime_type = photoFile.type;
+            }
+            
 
             try {
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
@@ -1990,7 +2123,7 @@
 
             document.getElementById('pdBody').innerHTML = `
                 <div class="pd-hero">
-                    <div class="pd-avatar">${node.photo_url ? `<img src="${node.photo_url}" alt="${node.name}" />` : initials || '?'}</div>
+                    <div class="pd-avatar">${driveImageSrc(node.photo_url) ? `<img src="${driveImageSrc(node.photo_url)}" alt="${node.name}" referrerpolicy="no-referrer" />` : initials || '?'}</div>
                     <div class="pd-hero-info">
                         <h2>${node.name || '—'}</h2>
                         <div class="pd-hero-meta">

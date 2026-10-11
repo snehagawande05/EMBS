@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -238,8 +238,14 @@
       transition: border-color 0.18s, background 0.18s;
     }
 
+    .form-group select {
+      background-color: #1a1a1e;
+      color-scheme: dark;
+    }
+
     .form-group select option {
       background: #1a1a1e;
+      color: #F4F4F5;
     }
 
     .form-group input:focus,
@@ -641,7 +647,7 @@
         <div class="month-year-row">
           <div class="form-group">
             <label>Month *</label>
-            <select id="genMonth">
+            <select id="genMonth" onchange="refreshGenState()">
               <option value="1">January</option>
               <option value="2">February</option>
               <option value="3">March</option>
@@ -658,9 +664,10 @@
           </div>
           <div class="form-group">
             <label>Year *</label>
-            <input type="number" id="genYear" value="2026" min="2020" max="2099" />
+            <input type="number" id="genYear" value="2026" min="2020" max="2099" oninput="refreshGenState()" />
           </div>
         </div>
+        <div id="genSlipInfo" style="font-size:12.5px; color:var(--text-muted); margin-bottom:14px; line-height:1.5;"></div>
         <button class="btn-submit" id="genSlipSubmitBtn" onclick="submitGenerateSlip()">Generate & Save Slip</button>
       </div>
     </div>
@@ -669,18 +676,75 @@
   <script src="app.js"></script>
   <script>
     AppSession.protect();
-    const TOKEN = AppSession.getToken();
-    const USER = AppSession.getUser();
+
+    // PAGE_* names avoid clashing with variables already declared in app.js
+    const PAGE_TOKEN = AppSession.getToken();
+    const PAGE_USER = AppSession.getUser() || {};
+
+    // Fallback toast in case app.js does not provide one
+    if (typeof showToast !== 'function') {
+      window.showToast = function (msg) { alert(msg); };
+    }
 
     let currentGenEmpId = null;
+    let JOIN_MAP = {}; // emp_id -> joining date string
+
+    // Slip opens this many days before the employee's salary date
+    const SLIP_LEAD_DAYS = 4;
 
     document.addEventListener('DOMContentLoaded', () => {
       // Only super_admin and hr can setup salaries
-      if (USER.role === 'employee' || USER.role === 'branch_manager') {
+      if (PAGE_USER.role === 'employee' || PAGE_USER.role === 'branch_manager') {
         document.getElementById('salaryFormPanel').style.display = 'none';
       }
       loadSalaries();
     });
+
+    /* ── Joining-date based salary cycle helpers ── */
+    function parseJoiningDate(value) {
+      if (!value) return null;
+      const s = String(value).trim();
+      const m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+      const d = m ? new Date(+m[3], +m[2] - 1, +m[1]) : new Date(s);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // Salary date for a month = joining day, clamped to the month's last day
+    function getPayDate(joinDate, month, year) {
+      const lastDay = new Date(year, month, 0).getDate();
+      return new Date(year, month - 1, Math.min(joinDate.getDate(), lastDay));
+    }
+
+    function getOpenDate(payDate, leadDays = SLIP_LEAD_DAYS) {
+      return new Date(payDate.getFullYear(), payDate.getMonth(), payDate.getDate() - leadDays);
+    }
+
+    function fmtDay(d) {
+      return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    function startOfToday() {
+      const n = new Date();
+      return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+    }
+
+    // Latest month whose slip window is already open
+    function latestAvailableMonth(joinDate) {
+      const t = startOfToday();
+      let y = t.getFullYear();
+      let m = t.getMonth() + 1;
+      if (t < getOpenDate(getPayDate(joinDate, m, y))) {
+        m -= 1;
+        if (m === 0) { m = 12; y -= 1; }
+      }
+      return { month: m, year: y };
+    }
+
+    function cycleLabel(joiningValue) {
+      const j = parseJoiningDate(joiningValue);
+      if (!j) return `<div style="font-size:11px;color:var(--warning);margin-top:3px;">Joining date missing</div>`;
+      return `<div style="font-size:11px;color:var(--text-dim);margin-top:3px;">Salary day: ${j.getDate()} · Slip opens ${SLIP_LEAD_DAYS} days before</div>`;
+    }
 
     /* ── Live Preview ── */
     function updatePreview() {
@@ -708,18 +772,20 @@
     /* ── Load salaries ── */
     async function loadSalaries() {
       try {
-        const res = await fetch(`${API_URL}?action=getSalaries&token=${TOKEN}`);
+        const res = await fetch(`${API_URL}?action=getSalaries&token=${PAGE_TOKEN}&limit=500`);
         const payload = await res.json();
         if (payload.status === 'success') {
           // Backend sends a paginated wrapper: { data: { data: [...], total, page, ... } }
-          const data = (payload.data && payload.data.data) || [];
+          const raw = (payload.data && payload.data.data) || payload.data || [];
+          const data = Array.isArray(raw) ? raw : [];
           updateStats(data);
           renderRows(data);
         } else {
-          showToast(payload.message || 'Salaries fetch nahi hui.');
+          showToast(payload.message || 'Failed to fetch salaries.');
         }
       } catch (e) {
-        showToast('Network error — salaries load nahi hui.');
+        console.error('loadSalaries error:', e);
+        showToast('Network error: could not load salaries.');
       }
     }
 
@@ -742,8 +808,11 @@
         return;
       }
 
-      const canEdit = USER.role === 'super_admin' || USER.role === 'hr';
-      const canGenerate = USER.role !== 'employee';
+      const canEdit = PAGE_USER.role === 'super_admin' || PAGE_USER.role === 'hr';
+      const canGenerate = PAGE_USER.role !== 'employee';
+
+      // Remember each employee's joining date for the slip window logic
+      data.forEach(r => { JOIN_MAP[r.emp_id] = r.joining_date; });
 
       tbody.innerHTML = data.map(r => {
         const basic = parseFloat(r.basic_salary) || 0;
@@ -764,7 +833,7 @@
 
         return `
         <tr>
-          <td><strong style="color:var(--accent-glow);">${r.emp_id}</strong></td>
+          <td><strong style="color:var(--accent-glow);">${r.emp_id}</strong>${cycleLabel(r.joining_date)}</td>
           <td><span class="emp-type-badge ${typeClass}">${r.employment_type || '—'}</span></td>
           <td>₹${basic.toLocaleString('en-IN')}</td>
           <td>₹${hra.toLocaleString('en-IN')}</td>
@@ -786,7 +855,7 @@
       document.getElementById('sPf').value = pf;
       updatePreview();
       document.getElementById('salaryFormPanel').scrollIntoView({ behavior: 'smooth' });
-      showToast('Form prefilled — edit karke save karein.');
+      showToast('Form prefilled. Edit the values and save.');
     }
 
     /* ── Submit salary structure ── */
@@ -796,7 +865,7 @@
       btn.disabled = true; btn.textContent = 'Saving...';
 
       const payload = {
-        token: TOKEN,
+        token: PAGE_TOKEN,
         action: 'setSalary',
         emp_id: document.getElementById('sEmpId').value.trim(),
         employment_type: document.getElementById('sEmpType').value,
@@ -828,10 +897,52 @@
     function openGenModal(empId) {
       currentGenEmpId = empId;
       document.getElementById('genSlipEmpId').textContent = empId;
+
+      // Default to the latest month whose slip window is already open
+      const joinDate = parseJoiningDate(JOIN_MAP[empId]);
+      if (joinDate) {
+        const latest = latestAvailableMonth(joinDate);
+        document.getElementById('genMonth').value = String(latest.month);
+        document.getElementById('genYear').value = latest.year;
+      }
+
       document.getElementById('genSlipModal').style.display = 'flex';
+      refreshGenState();
     }
+
     function toggleGenModal(on) {
       document.getElementById('genSlipModal').style.display = on ? 'flex' : 'none';
+    }
+
+    // Enables or disables the Generate button based on the employee's slip window
+    function refreshGenState() {
+      const btn = document.getElementById('genSlipSubmitBtn');
+      const info = document.getElementById('genSlipInfo');
+      const joinDate = parseJoiningDate(JOIN_MAP[currentGenEmpId]);
+
+      if (!joinDate) {
+        info.style.color = 'var(--warning)';
+        info.textContent = 'Joining date not found for this employee.';
+        btn.disabled = true;
+        return;
+      }
+
+      const month = parseInt(document.getElementById('genMonth').value, 10);
+      const year = parseInt(document.getElementById('genYear').value, 10);
+      if (!month || !year) { btn.disabled = true; return; }
+
+      const payDate = getPayDate(joinDate, month, year);
+      const openDate = getOpenDate(payDate);
+
+      if (startOfToday() < openDate) {
+        info.style.color = 'var(--warning)';
+        info.textContent = `Salary date: ${fmtDay(payDate)}. Slip can be generated from ${fmtDay(openDate)}.`;
+        btn.disabled = true;
+      } else {
+        info.style.color = 'var(--success)';
+        info.textContent = `Salary date: ${fmtDay(payDate)}. Slip is available to generate.`;
+        btn.disabled = false;
+      }
     }
 
     async function submitGenerateSlip() {
@@ -840,7 +951,7 @@
       btn.disabled = true; btn.textContent = 'Generating...';
 
       const payload = {
-        token: TOKEN,
+        token: PAGE_TOKEN,
         action: 'generateSlip',
         emp_id: currentGenEmpId,
         month: document.getElementById('genMonth').value,
@@ -859,7 +970,8 @@
       } catch (err) {
         showToast('Network error.');
       } finally {
-        btn.disabled = false; btn.textContent = 'Generate & Save Slip';
+        btn.textContent = 'Generate & Save Slip';
+        refreshGenState();
       }
     }
   </script>
