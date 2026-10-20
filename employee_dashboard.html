@@ -411,9 +411,15 @@
       .profile-info-grid { margin-left: 0; width: 100%; }
     }
 
-    @media (max-width: 480px) {
-      .profile-info-grid { grid-template-columns: 1fr; }
-    }
+     @media (max-width: 480px) {
+  .profile-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 14px;
+  }
+  .profile-info-item .info-value {
+    font-size: 13px;
+  }
+}
 
     /* ── Section 3: Info Cards ── */
     .info-row {
@@ -3440,12 +3446,14 @@
 
       let footerAction = '';
       if (col === 'done') {
-        footerAction = `
-          <span style="color:var(--success);font-size:12px;font-weight:600;">✓ Accepted</span>
-          <button class="btn-done" onclick="openSubmitModal('${id}', 'edit')">✏️ Edit</button>`;
-      } else if (col === 'review') {
-        footerAction = `<span style="color:#D97706;font-size:12px;font-weight:600;">⏳ Under Review</span>`;
-      } else if (col === 'progress') {
+  footerAction = `
+    <span style="color:var(--success);font-size:12px;font-weight:600;">✓ Accepted</span>`;
+} else if (col === 'review') {
+  footerAction = `
+    <span style="color:#D97706;font-size:12px;font-weight:600;">⏳ Under Review</span>
+    <button class="btn-done" onclick="openSubmitModal('${id}', 'edit')">✏️ Edit</button>`;
+}
+        else if (col === 'progress') {
         footerAction = `
           <button class="btn-done" onclick="openSubmitModal('${id}', 'submit')">${isRejected ? 'Re-Submit 📤' : 'Submit Work 📤'}</button>`;
              } else {
