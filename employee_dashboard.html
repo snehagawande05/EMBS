@@ -263,7 +263,7 @@
     .task-card { padding: 16px 18px; }
     .task-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
     .task-title { font-size: 14px; font-weight: 600; color: var(--text-primary); line-height: 1.4; }
-    .task-due { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+    .task-due { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4; }
     .task-footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
     .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
     .badge-high { background: rgba(248,113,113,0.12); color: #FCA5A5; }
@@ -1939,39 +1939,53 @@
       const isOverdue = dueD && dueD < TODAY && col !== 'done';
       const isRejected = t.submission_status === 'rejected';
       const id = t.task_id;
-      
+
+      const todayStr = formatDateYMD(new Date());
+      const formatActionDate = (dateVal) => {
+        if (!dateVal) return 'Recently';
+        const d = parseDMY(dateVal) || new Date(dateVal);
+        if (!d || isNaN(d.getTime())) return 'Recently';
+        const dStr = formatDateYMD(d);
+        if (dStr === todayStr) return 'Recently';
+        return formatTaskDate(dateVal);
+      };
+
       const subBox = (t.submission_link && (col === 'review' || col === 'done'))
         ? `<div class="task-sub-box">🔗 <a href="${escapeHtml(t.submission_link)}" target="_blank" rel="noopener">View submitted work</a>${t.submission_note ? `<div style="margin-top:4px;">📝 ${escapeHtml(t.submission_note)}</div>` : ''}</div>` : '';
-      
-      // Dynamic Date Logic
+
       let dateLine = '';
       if (col === 'assigned') {
-        dateLine = `<div class="task-due" ${isOverdue ? 'style="color:var(--danger);"' : ''}>📅 Due: ${dueText}${isOverdue ? ' ⚠️' : ''}</div>`;
+        const assignD = t.assigned_at || t.created_at || t.assigned_date || t.date;
+        const assignText = assignD ? formatTaskDate(assignD) : 'N/A';
+        dateLine = `<div class="task-due" ${isOverdue ? 'style="color:var(--danger);"' : ''}>📅 Assigned: ${assignText} <br> ⏰ Due: ${dueText}${isOverdue ? ' ⚠️' : ''}</div>`;
       } else if (col === 'progress') {
         const startD = t.started_at || t.start_date || t.updated_at;
-        dateLine = `<div class="task-due" ${isOverdue ? 'style="color:var(--danger);"' : ''}>▶ Started: ${startD ? formatTaskDate(startD) : 'Recently'} ${isOverdue ? '⚠️' : ''}</div>`;
+        const startText = formatActionDate(startD);
+        dateLine = `<div class="task-due" ${isOverdue ? 'style="color:var(--danger);"' : ''}>▶ Started: ${startText} ${isOverdue ? '⚠️' : ''}</div>`;
       } else if (col === 'review') {
         const subD = t.submitted_at || t.submission_date || t.updated_at;
-        dateLine = `<div class="task-due">📤 Submitted: ${subD ? formatTaskDate(subD) : 'Recently'}</div>`;
+        const subText = formatActionDate(subD);
+        dateLine = `<div class="task-due">📤 Submitted: ${subText}</div>`;
       } else if (col === 'done') {
         const doneD = t.completed_at || t.completed_date || t.updated_at;
-        dateLine = `<div class="task-due" style="color:var(--success);">✓ Done: ${doneD ? formatTaskDate(doneD) : 'Recently'}</div>`;
+        const doneText = doneD ? formatTaskDate(doneD) : 'Recently';
+        dateLine = `<div class="task-due" style="color:var(--success);">✓ Done: ${doneText}</div>`;
       }
 
       let footerAction = '';
       if (col === 'done') {
-        footerAction = `<span style="color:var(--success);font-size:12px;font-weight:600;">✓ Accepted</span>`; // Removed Edit button
+        footerAction = `<span style="color:var(--success);font-size:12px;font-weight:600;">✓ Accepted</span>`;
       } else if (col === 'review') {
         footerAction = `<span style="color:#FCD34D;font-size:12px;font-weight:600; margin-right:8px;">⏳ Under Review</span>
-                        <button class="btn-done" onclick="openSubmitModal('${id}', 'edit')">✏️ Edit</button>`; // Added Edit button
+                        <button class="btn-done" onclick="openSubmitModal('${id}', 'edit')">✏️ Edit</button>`;
       } else if (col === 'progress') {
         footerAction = `<button class="btn-done" onclick="openSubmitModal('${id}', 'submit')">${isRejected ? 'Re-Submit 📤' : 'Submit Work 📤'}</button>`;
       } else {
         footerAction = `<button class="btn-done" onclick="startTask('${id}')">▶ Start Work</button>`;
       }
-      
+
       const rejectBox = (col === 'progress' && isRejected) ? `<div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.22);border-radius:8px;padding:8px 10px;font-size:11.5px;color:#F87171;margin:6px 0;">✕ Rejected: ${escapeHtml(t.review_note || 'Reason not given')}</div>` : '';
-      
+
       return `
         <div class="glass-card task-card">
           <div class="task-top">
