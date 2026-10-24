@@ -199,6 +199,26 @@
       line-height: 1.5;
     }
 
+    /* ── Late / Early / Half-day warning ── */
+    .warn {
+      display: none;
+      background: #FFF7ED;
+      border: 1px solid #FED7AA;
+      border-left: 3px solid #F59E0B;
+      color: #9A3412;
+      border-radius: var(--r-sm);
+      padding: 10px 13px;
+      font-size: 12.5px;
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+
+    .warn.half {
+      background: #FEF3C7;
+      border-color: #FDE68A;
+      color: #92400E;
+    }
+
     /* ── Buttons ── */
     .btn {
       width: 100%;
@@ -419,8 +439,8 @@
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .field input:focus { 
-      border-color: var(--accent); 
+    .field input:focus {
+      border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(107, 33, 168, 0.1);
     }
     .field input::placeholder { color: var(--dim); }
@@ -491,8 +511,7 @@
 
     <div class="body">
 
-      <!-- ══ Location status — auto-requested on page load, always
-           visible as a small strip, never a separate full screen ══ -->
+      <!-- Location status -->
       <div class="loc-strip" id="locStrip">
         <span class="pdot pdot-y" id="locDot"></span>
         <span class="txt" id="locStripText">Detecting your location…</span>
@@ -500,9 +519,7 @@
       </div>
       <div class="err" id="errLoc"></div>
 
-      <!-- ══ FIRST-TIME registration form — only ever shown once per
-           device. After a successful verify, this device is locked to
-           this employee and the form never appears again on it. ══ -->
+      <!-- FIRST-TIME registration form — only shown once per device -->
       <div id="firstTimeForm" style="display:none;">
         <div class="step-title">Enter Your Details</div>
         <div class="step-sub">First time on this device — fill this once. After verifying, this device
@@ -532,9 +549,7 @@
         </button>
       </div>
 
-      <!-- ══ Punch view — shown directly for any returning device.
-           Name/Mobile/Email are read-only (static — locked to this
-           device once saved). No "switch employee" escape hatch. ══ -->
+      <!-- Punch view — shown directly for any returning device -->
       <div id="punchView" style="display:none;">
 
         <div class="emp-meta">
@@ -566,7 +581,9 @@
           </div>
         </div>
 
-        <!-- Shown when both IN+OUT already done today -->
+        <!-- Late / Early / Half-day warning -->
+        <div class="warn" id="warnBox"></div>
+
         <div class="complete-banner" id="completeBanner" style="display:none;">
           <div class="cb-icon">✅</div>
           <div class="cb-title">Today's attendance is complete!</div>
@@ -585,8 +602,6 @@
 
     </div><!-- /body -->
 
-    <!-- ══ Success checkmark flash — appears briefly after a punch,
-         then fades to reveal the same (updated) punch view. ══ -->
     <div class="success-overlay" id="successOverlay">
       <div class="ov-ring" id="ovRing">✅</div>
       <div class="ov-title" id="ovTitle">Punched IN!</div>
@@ -600,28 +615,43 @@
     // ═══════════════════════════════════════════════════
     const API_URL = 'https://script.google.com/macros/s/AKfycbw-jOzaBeYvNjfJjrUfSaW7EsuxCtRcvjofpWR6Z2xULhhsqrRkdo6oIr-kY-O8lp6IkQ/exec';
 
-    // Universal link — no ?branch=BR001 needed. Page asks for GPS on
-    // load, backend checks every registered branch's geofence and
-    // tells us which one (if any) the employee is standing inside.
-
-    // Employee details are captured ONCE on this device (first-time
-    // form) and then remembered locally — this device is permanently
-    // locked to that employee from then on. There is intentionally NO
-    // "switch employee" escape hatch, so a device can't be used to
-    // punch in/out as someone else.
     const KIOSK_KEY = 'ebms_self_punch_employee';
+
+    // Late/Early rules
+    const GRACE_MIN = 15;          // 15 min grace
+    const HALF_DAY_MIN = 6 * 60;   // 6 hours = Half Day
 
     let userLat = null, userLng = null;
     let locationVerified = false;
     let lastPunch = null;   // null | 'in' | 'both'
     let todayIn = '—', todayOut = '—';
     let empInfo = {};
+    let shiftInfo = null;   // { shift_name, start_time, end_time } or null
 
+    // ── Employee details: saved ONCE on this device ────────────
+    // localStorage + cookie backup, so the form never comes back
+    // on the same phone/browser.
     function getSavedEmployee() {
-      try { return JSON.parse(localStorage.getItem(KIOSK_KEY) || 'null'); } catch (e) { return null; }
+      try {
+        const v = localStorage.getItem(KIOSK_KEY);
+        if (v) return JSON.parse(v);
+      } catch (e) {}
+      const m = document.cookie.match(new RegExp('(?:^|; )' + KIOSK_KEY + '=([^;]*)'));
+      if (m) {
+        try {
+          const emp = JSON.parse(decodeURIComponent(m[1]));
+          try { localStorage.setItem(KIOSK_KEY, JSON.stringify(emp)); } catch (e) {}
+          return emp;
+        } catch (e) {}
+      }
+      return null;
     }
+
     function saveEmployee(emp) {
-      try { localStorage.setItem(KIOSK_KEY, JSON.stringify(emp)); } catch (e) {}
+      const s = JSON.stringify(emp);
+      try { localStorage.setItem(KIOSK_KEY, s); } catch (e) {}
+      document.cookie = KIOSK_KEY + '=' + encodeURIComponent(s) +
+        '; max-age=' + (365 * 24 * 3600) + '; path=/; SameSite=Lax';
     }
 
     // ── Live clock ────────────────────────────────────
@@ -651,14 +681,12 @@
       document.getElementById('btnOut').disabled = !enabled;
     }
 
-    // ── Find which branch's geofence the employee is currently inside
-    // (fully public — no login/QR checksum). ──────────────────────
     async function findMyBranch(lat, lng) {
       const res = await fetch(`${API_URL}?action=findBranchByLocation&lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`);
       return res.json();
     }
 
-    // ── Location — auto-requested on page load, no separate screen ──
+    // ── Location ──────────────────────────────────────
     function requestLocation() {
       const errEl = document.getElementById('errLoc');
       const retryBtn = document.getElementById('btnRetryLoc');
@@ -705,19 +733,13 @@
       );
     }
 
-    // ── After GPS+branch verified: enable punching. Punch view /
-    // first-time form was already rendered on load (independent of
-    // location), we just unlock the action buttons here. ──────────
     function afterLocationVerified() {
       if (document.getElementById('punchView').style.display !== 'none') {
         setPunchButtonsEnabled(lastPunch !== 'both');
       }
     }
 
-    // ── Decide which section to render: returning-device punch view,
-    // or first-time registration form. Runs immediately on load —
-    // independent of location, so Name/Mobile/Email/Date show right
-    // away; only the actual Check In/Out buttons wait on GPS. ──────
+    // ── Decide which section to show ──────────────────
     function renderInitialView() {
       const saved = getSavedEmployee();
       if (saved && saved.emp_id) {
@@ -764,8 +786,6 @@
             email:  data.data.email,
             mobile: data.data.mobile
           };
-          // 🔒 Locked to this device from now on — no switch-employee
-          // option exists anywhere in this page.
           saveEmployee(empInfo);
 
           document.getElementById('firstTimeForm').style.display = 'none';
@@ -781,7 +801,60 @@
       }
     }
 
-    // ── Punch view — populate identity + today's IN/OUT status ─────
+    // ═══════════════════════════════════════════════════
+    //  SHIFT + WARNING (Late Entry / Early Exit / Half Day)
+    // ═══════════════════════════════════════════════════
+    function toMin(t) {
+      if (!t || t === '—') return null;
+      const s = String(t).trim();
+      if (s.includes('T')) { const p = s.split('T')[1].split(':'); return (+p[0] || 0) * 60 + (+p[1] || 0); }
+      if (s.includes(':')) { const p = s.split(':'); return (+p[0] || 0) * 60 + (+p[1] || 0); }
+      if (!isNaN(parseFloat(s))) return Math.round(parseFloat(s) * 24 * 60);
+      return null;
+    }
+
+    async function loadShift() {
+      try {
+        const r = await fetch(`${API_URL}?action=getMyShift&emp_id=${encodeURIComponent(empInfo.emp_id)}&date=${istDateStr()}`);
+        const d = await r.json();
+        shiftInfo = (d.status === 'success' && d.data) ? d.data : null;
+      } catch (e) { shiftInfo = null; }
+    }
+
+    function showWarnings() {
+      const box = document.getElementById('warnBox');
+      const msgs = [];
+      let half = false;
+
+      if (shiftInfo) {
+        const sStart = toMin(shiftInfo.start_time);
+        const sEnd   = toMin(shiftInfo.end_time);
+        const inMin  = toMin(todayIn);
+        const outMin = toMin(todayOut);
+
+        const late  = inMin !== null && sStart !== null && inMin > sStart + GRACE_MIN;
+        const early = outMin !== null && sEnd !== null && outMin < sEnd - GRACE_MIN;
+
+        if (late)  msgs.push('⚠️ <b>Late Entry:</b> You came ' + (inMin - sStart) + ' min late (shift starts ' + fmt12(shiftInfo.start_time) + ').');
+        if (early) msgs.push('⚠️ <b>Early Exit:</b> You left ' + (sEnd - outMin) + ' min early (shift ends ' + fmt12(shiftInfo.end_time) + ').');
+
+        if ((late || early) && inMin !== null && outMin !== null) {
+          const worked = outMin - inMin;
+          if (worked >= HALF_DAY_MIN) {
+            msgs.push('🕐 You worked 6+ hours, so today counts as a <b>Half Day</b>.');
+            half = true;
+          } else {
+            msgs.push('❗ You worked less than 6 hours today.');
+          }
+        }
+      }
+
+      box.className = 'warn' + (half ? ' half' : '');
+      box.innerHTML = msgs.join('<br>');
+      box.style.display = msgs.length ? 'block' : 'none';
+    }
+
+    // ── Punch view ────────────────────────────────────
     async function renderPunchView() {
       document.getElementById('showName').textContent = empInfo.name || empInfo.emp_id;
       document.getElementById('showEmpId').textContent = empInfo.emp_id;
@@ -790,8 +863,9 @@
       document.getElementById('todayDateDisp').textContent =
         new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-      // Buttons stay disabled until location verifies (see afterLocationVerified)
       setPunchButtonsEnabled(false);
+
+      await loadShift();
 
       try {
         const todayStr = istDateStr();
@@ -810,10 +884,11 @@
             lastPunch = null; todayIn = '—'; todayOut = '—';
           }
         }
-      } catch (e) { /* silent — still show punch view */ }
+      } catch (e) { /* silent */ }
 
       document.getElementById('inDisp').textContent = todayIn !== '—' ? fmt12(todayIn) : '—';
       document.getElementById('outDisp').textContent = todayOut !== '—' ? fmt12(todayOut) : '—';
+      showWarnings();
 
       const btnIn = document.getElementById('btnIn');
       const btnOut = document.getElementById('btnOut');
@@ -833,11 +908,10 @@
         btnOut.style.display = 'none';
       }
 
-      // If location already verified by the time this resolves, unlock now.
       if (locationVerified) setPunchButtonsEnabled(lastPunch !== 'both');
     }
 
-    // ── Punch (Check In / Check Out) ────────────────────
+    // ── Punch (IN / OUT) ──────────────────────────────
     async function doPunch(type) {
       const errEl = document.getElementById('errPunch');
       errEl.style.display = 'none';
@@ -848,11 +922,22 @@
 
       const sp = document.getElementById(type === 'in' ? 'spIn' : 'spOut');
       const btn = document.getElementById(type === 'in' ? 'btnIn' : 'btnOut');
-      sp.style.display = 'inline-block'; btn.disabled = true;
 
       const now = new Date();
       const timeStr = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
       const dateStr = istDateStr();
+
+      // Early exit — ask for confirmation before punching out
+      if (type === 'out' && shiftInfo) {
+        const sEnd = toMin(shiftInfo.end_time);
+        const nowMin = toMin(timeStr);
+        if (sEnd !== null && nowMin !== null && nowMin < sEnd - GRACE_MIN) {
+          const ok = confirm('You are punching out ' + (sEnd - nowMin) + ' min before your shift ends (Early Exit). Continue?');
+          if (!ok) return;
+        }
+      }
+
+      sp.style.display = 'inline-block'; btn.disabled = true;
 
       const payload = {
         action: 'markAttendance',
@@ -860,8 +945,6 @@
         date: dateStr,
         time: timeStr
       };
-      // No token / checksum — geofence + the one-time device registration
-      // is the identity proof for this self-service kiosk flow.
 
       try {
         const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
@@ -886,6 +969,8 @@
             flashSuccess('🕐', 'Punched OUT!');
           }
 
+          showWarnings();
+
           sp.style.display = 'none';
           setPunchButtonsEnabled(locationVerified && lastPunch !== 'both');
         } else {
@@ -898,8 +983,6 @@
       }
     }
 
-    // ── Brief checkmark flash — 1.5s, then fades back to the same
-    // (now-updated) punch view. No separate "success screen". ──────
     function flashSuccess(icon, title) {
       const overlay = document.getElementById('successOverlay');
       document.getElementById('ovRing').textContent = icon;
@@ -931,11 +1014,9 @@
 
     // ── Boot ──────────────────────────────────────────
     window.addEventListener('load', () => {
-      // Render Name/Mobile/Email/Date (or the first-time form)
-      // immediately — doesn't wait on GPS.
+      // Keep saved details from being auto-deleted by the browser
+      if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
       renderInitialView();
-      // Location is requested automatically, silently, right away.
-      // Only the Check In/Out buttons stay locked until it succeeds.
       requestLocation();
     });
   </script>
