@@ -509,6 +509,7 @@
           <button class="nav-menu-item" onclick="closeNavMenu(); openTargetModal();">🎯 My Target</button>
           <button class="nav-menu-item" onclick="closeNavMenu(); openBankDocsModal('bank');">📁 Bank &amp; Docs</button>
           <button class="nav-menu-item" onclick="closeNavMenu(); openPasswordModal();">🔒 Change Password</button>
+          <button class="nav-menu-item" onclick="closeNavMenu(); openHolidayCalendarModal();">📅 Academic Calendar</button>
         </div>
       </div>
       <button class="nav-btn logout" onclick="doLogout()">🚪 Logout</button>
@@ -523,6 +524,7 @@
     <button class="nav-btn" onclick="openTargetModal()">🎯 My Target</button>
     <button class="nav-btn" onclick="openBankDocsModal('bank')">📁 Bank & Docs</button>
     <button class="nav-btn" onclick="openPasswordModal()">🔒 Change Password</button>
+    <button class="nav-btn" onclick="openHolidayCalendarModal()">📅 Academic Calendar</button>
     <button class="nav-btn logout" onclick="doLogout()">🚪 Logout</button>
   </div>
 
@@ -948,6 +950,15 @@
           <div class="form-group"><label>Confirm New Password</label><input type="password" id="pwConfirm" required minlength="6" /></div>
           <button type="submit" class="btn-submit-leave" id="pwSubmitBtn">Update Password</button>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="holidayCalendarModal">
+    <div class="modal-card">
+      <div class="modal-header"><h3>📅 Academic Calendar</h3><button class="modal-close-btn" onclick="closeModal('holidayCalendarModal')">✕ Close</button></div>
+      <div class="modal-body">
+        <div id="holidayCalendarList"><div class="empty-note">Loading holidays...</div></div>
       </div>
     </div>
   </div>
@@ -2209,6 +2220,50 @@
           }
         }
       } catch (e) {}
+    }
+
+    async function openHolidayCalendarModal() {
+      document.getElementById('holidayCalendarModal').classList.add('open');
+      const listEl = document.getElementById('holidayCalendarList');
+      listEl.innerHTML = '<div class="empty-note">Loading...</div>';
+      
+      try {
+        const year = new Date().getFullYear();
+        const holidays = await getHolidaysCached(year);
+        
+        if (!holidays || holidays.length === 0) {
+          listEl.innerHTML = '<div class="empty-note">No holidays announced yet for this year.</div>';
+          return;
+        }
+        
+        holidays.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        let html = '';
+        let currentMonth = -1;
+        
+        holidays.forEach(h => {
+          const d = new Date(h.date);
+          const m = d.getMonth();
+          const dateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', weekday: 'short' });
+          
+          if (m !== currentMonth) {
+            currentMonth = m;
+            html += `<div style="margin-top:16px; margin-bottom:8px; font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--accent-glow); border-bottom:1px solid var(--glass-border); padding-bottom:4px;">${months[m]}</div>`;
+          }
+          
+          html += `<div class="leave-row-item" style="padding: 10px 0;">
+              <div class="leave-row-left">
+                <div class="leave-type-text">${escapeHtml(h.name || h.holiday_name || h.description || 'Holiday')}</div>
+                <div class="leave-dates-text" style="color:var(--success); font-weight:600;">${dateStr}</div>
+              </div>
+              <span class="badge badge-completed">Holiday</span>
+          </div>`;
+        });
+        
+        listEl.innerHTML = html;
+      } catch (e) {
+        listEl.innerHTML = '<div class="empty-note">Could not load holidays.</div>';
+      }
     }
   </script>
 
