@@ -1940,14 +1940,17 @@
       const isRejected = t.submission_status === 'rejected';
       const id = t.task_id;
 
-      const todayStr = formatDateYMD(new Date());
-      const formatActionDate = (dateVal) => {
-        if (!dateVal) return 'Recently';
-        const d = parseDMY(dateVal) || new Date(dateVal);
-        if (!d || isNaN(d.getTime())) return 'Recently';
-        const dStr = formatDateYMD(d);
-        if (dStr === todayStr) return 'Recently';
-        return formatTaskDate(dateVal);
+      // Helper to format Date and Time
+      const formatDateTime = (val) => {
+        if (!val) return 'N/A';
+        const d = parseDMY(val) || new Date(val);
+        if (isNaN(d.getTime())) return val; // Return original string if unparseable
+        // Check if string contains time (indicated by ':' or 'T')
+        if (String(val).includes(':') || String(val).includes('T')) {
+            return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' +
+                   d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+        return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
       };
 
       const subBox = (t.submission_link && (col === 'review' || col === 'done'))
@@ -1956,19 +1959,19 @@
       let dateLine = '';
       if (col === 'assigned') {
         const assignD = t.assigned_at || t.created_at || t.assigned_date || t.date;
-        const assignText = assignD ? formatTaskDate(assignD) : 'N/A';
+        const assignText = assignD ? formatDateTime(assignD) : 'N/A';
         dateLine = `<div class="task-due" ${isOverdue ? 'style="color:var(--danger);"' : ''}>📅 Assigned: ${assignText} <br> ⏰ Due: ${dueText}${isOverdue ? ' ⚠️' : ''}</div>`;
       } else if (col === 'progress') {
         const startD = t.started_at || t.start_date || t.updated_at;
-        const startText = formatActionDate(startD);
+        const startText = startD ? formatDateTime(startD) : 'N/A';
         dateLine = `<div class="task-due" ${isOverdue ? 'style="color:var(--danger);"' : ''}>▶ Started: ${startText} ${isOverdue ? '⚠️' : ''}</div>`;
       } else if (col === 'review') {
         const subD = t.submitted_at || t.submission_date || t.updated_at;
-        const subText = formatActionDate(subD);
+        const subText = subD ? formatDateTime(subD) : 'N/A';
         dateLine = `<div class="task-due">📤 Submitted: ${subText}</div>`;
       } else if (col === 'done') {
         const doneD = t.completed_at || t.completed_date || t.updated_at;
-        const doneText = doneD ? formatTaskDate(doneD) : 'Recently';
+        const doneText = doneD ? formatDateTime(doneD) : 'N/A';
         dateLine = `<div class="task-due" style="color:var(--success);">✓ Done: ${doneText}</div>`;
       }
 
@@ -2275,15 +2278,27 @@
           return;
         }
         
-        holidays.sort((a, b) => new Date(a.date) - new Date(b.date));
+        // Sort by robust date parsing
+        holidays.sort((a, b) => {
+            const da = parseDMY(a.date || a.holiday_date) || new Date(a.date);
+            const db = parseDMY(b.date || b.holiday_date) || new Date(b.date);
+            return da - db;
+        });
+
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         let html = '';
         let currentMonth = -1;
         
         holidays.forEach(h => {
-          const d = new Date(h.date);
+          const dateVal = h.date || h.holiday_date;
+          if (!dateVal) return; // Skip invalid entries
+
+          // Use robust date parsing to fix "Invalid Date"
+          const d = parseDMY(dateVal) || new Date(dateVal);
+          if (isNaN(d.getTime())) return;
+
           const m = d.getMonth();
-          const dateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', weekday: 'short' });
+          const dateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
           
           if (m !== currentMonth) {
             currentMonth = m;
@@ -2299,7 +2314,11 @@
           </div>`;
         });
         
-        listEl.innerHTML = html;
+        if (!html) {
+            listEl.innerHTML = '<div class="empty-note">No valid holidays found.</div>';
+        } else {
+            listEl.innerHTML = html;
+        }
       } catch (e) {
         listEl.innerHTML = '<div class="empty-note">Could not load holidays.</div>';
       }
