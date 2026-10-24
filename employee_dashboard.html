@@ -1897,10 +1897,26 @@
     }
 
     const STARTED_KEY = 'started_tasks_' + (USER && USER.employee_id);
-    function getStartedTasks() { try { return JSON.parse(localStorage.getItem(STARTED_KEY) || '[]'); } catch (e) { return []; } }
+    function getStartedTasks() { 
+        try { 
+            const data = localStorage.getItem(STARTED_KEY);
+            if (!data) return {};
+            const parsed = JSON.parse(data);
+            if (Array.isArray(parsed)) {
+                const obj = {};
+                parsed.forEach(id => obj[id] = Date.now());
+                localStorage.setItem(STARTED_KEY, JSON.stringify(obj));
+                return obj;
+            }
+            return parsed;
+        } catch (e) { return {}; } 
+    }
     function startTask(taskId) {
       const list = getStartedTasks();
-      if (!list.includes(taskId)) { list.push(taskId); localStorage.setItem(STARTED_KEY, JSON.stringify(list)); }
+      if (!list[taskId]) { 
+          list[taskId] = new Date().toISOString(); 
+          localStorage.setItem(STARTED_KEY, JSON.stringify(list)); 
+      }
       showToast('Task started!');
       loadTasks();
     }
@@ -1908,7 +1924,7 @@
       if (t.status === 'completed') return 'done';
       if (t.status === 'in_review') return 'review';
       if (t.submission_status === 'rejected') return 'progress';
-      if (getStartedTasks().includes(t.task_id) || t.submission_link) return 'progress';
+      if (getStartedTasks()[t.task_id] || t.submission_link) return 'progress';
       return 'assigned';
     }
 
@@ -1944,8 +1960,7 @@
       const formatDateTime = (val) => {
         if (!val) return 'N/A';
         const d = parseDMY(val) || new Date(val);
-        if (isNaN(d.getTime())) return val; // Return original string if unparseable
-        // Check if string contains time (indicated by ':' or 'T')
+        if (isNaN(d.getTime())) return String(val); 
         if (String(val).includes(':') || String(val).includes('T')) {
             return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' +
                    d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -1962,7 +1977,7 @@
         const assignText = assignD ? formatDateTime(assignD) : 'N/A';
         dateLine = `<div class="task-due" ${isOverdue ? 'style="color:var(--danger);"' : ''}>📅 Assigned: ${assignText} <br> ⏰ Due: ${dueText}${isOverdue ? ' ⚠️' : ''}</div>`;
       } else if (col === 'progress') {
-        const startD = t.started_at || t.start_date || t.updated_at;
+        const startD = t.started_at || t.start_date || t.updated_at || getStartedTasks()[t.task_id];
         const startText = startD ? formatDateTime(startD) : 'N/A';
         dateLine = `<div class="task-due" ${isOverdue ? 'style="color:var(--danger);"' : ''}>▶ Started: ${startText} ${isOverdue ? '⚠️' : ''}</div>`;
       } else if (col === 'review') {
@@ -1970,7 +1985,7 @@
         const subText = subD ? formatDateTime(subD) : 'N/A';
         dateLine = `<div class="task-due">📤 Submitted: ${subText}</div>`;
       } else if (col === 'done') {
-        const doneD = t.completed_at || t.completed_date || t.updated_at;
+        const doneD = t.completed_at || t.completed_date || t.approved_at || t.approval_date || t.updated_at || t.submitted_at || t.submission_date;
         const doneText = doneD ? formatDateTime(doneD) : 'N/A';
         dateLine = `<div class="task-due" style="color:var(--success);">✓ Done: ${doneText}</div>`;
       }
@@ -2264,6 +2279,21 @@
       } catch (e) {}
     }
 
+    function parseHolidayDate(dateVal) {
+        if (!dateVal) return null;
+        let str = String(dateVal).trim();
+        // Try parsing DD/MM/YYYY or DD-MM-YYYY
+        let m = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+        if (m) return new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+        
+        // Try parsing YYYY-MM-DD
+        m = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+        if (m) return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+        
+        const d = new Date(str);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
     async function openHolidayCalendarModal() {
       document.getElementById('holidayCalendarModal').classList.add('open');
       const listEl = document.getElementById('holidayCalendarList');
@@ -2280,8 +2310,8 @@
         
         // Sort by robust date parsing
         holidays.sort((a, b) => {
-            const da = parseDMY(a.date || a.holiday_date) || new Date(a.date);
-            const db = parseDMY(b.date || b.holiday_date) || new Date(b.date);
+            const da = parseHolidayDate(a.date || a.holiday_date) || new Date(a.date);
+            const db = parseHolidayDate(b.date || b.holiday_date) || new Date(b.date);
             return da - db;
         });
 
@@ -2294,8 +2324,8 @@
           if (!dateVal) return; // Skip invalid entries
 
           // Use robust date parsing to fix "Invalid Date"
-          const d = parseDMY(dateVal) || new Date(dateVal);
-          if (isNaN(d.getTime())) return;
+          const d = parseHolidayDate(dateVal);
+          if (!d || isNaN(d.getTime())) return;
 
           const m = d.getMonth();
           const dateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
