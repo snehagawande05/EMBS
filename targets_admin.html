@@ -747,6 +747,11 @@
           <input type="number" id="emAssigned" min="1" placeholder="e.g. 3" />
           <div class="form-hint">Example: assign 3 → employee's dashboard will show "completed / 3" (e.g. 2/3).</div>
         </div>
+        <div class="form-group" id="efgDone" style="display:none;">
+          <label>Completed So Far</label>
+          <input type="number" id="emDone" min="0" placeholder="e.g. 2" />
+          <div class="form-hint">Update this as the employee completes targets — dashboard shows completed / assigned.</div>
+        </div>
         <div class="form-group" id="efgStatus" style="display:none;">
           <label>Status</label>
           <select id="emStatus">
@@ -969,6 +974,7 @@
       document.getElementById('empModalTitle').textContent = '➕ Assign Target to Employee';
       document.getElementById('efgEmp').style.display = 'flex';
       document.getElementById('efgStatus').style.display = 'none';
+      document.getElementById('efgDone').style.display = 'none';
       document.getElementById('emEmp').value = '';
       document.getElementById('emMonth').disabled = false;
       document.getElementById('emYear').disabled = false;
@@ -985,6 +991,8 @@
       document.getElementById('empModalTitle').textContent = '✏️ Edit Employee Target — ' + (empNameMap[t.emp_id] || t.emp_id);
       document.getElementById('efgEmp').style.display = 'none';
       document.getElementById('efgStatus').style.display = 'flex';
+      document.getElementById('efgDone').style.display = 'flex';
+      document.getElementById('emDone').value = parseInt(t.achieved_target, 10) || 0;
       document.getElementById('emMonth').value = t.target_month;
       document.getElementById('emMonth').disabled = true;
       document.getElementById('emYear').value = t.target_year;
@@ -1006,7 +1014,9 @@
       if (assigned === '' || isNaN(assigned) || parseInt(assigned, 10) < 1) { showToast('Enter how many targets to assign (1 or more).'); return; }
       let payload;
       if (editingEmpTargetId) {
-        payload = { token: TOKEN, action: 'updateTarget', target_id: editingEmpTargetId, assigned_target: assigned, status: document.getElementById('emStatus').value };
+        const done = document.getElementById('emDone').value;
+        if (done !== '' && parseInt(done, 10) > parseInt(assigned, 10)) { showToast('Completed cannot be more than assigned.'); return; }
+        payload = { token: TOKEN, action: 'updateTarget', target_id: editingEmpTargetId, assigned_target: assigned, achieved_target: done, status: document.getElementById('emStatus').value };
       } else {
         const empId = document.getElementById('emEmp').value;
         if (!empId) { showToast('Please select an employee.'); return; }
