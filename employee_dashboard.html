@@ -11,7 +11,14 @@
     rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     :root {
       --bg-base: #0A0A0B;
       --glass: rgba(255, 255, 255, 0.045);
@@ -27,9 +34,11 @@
       --warning: #FBBF24;
       --danger: #F87171;
       --purple: #C084FC;
+      --indigo: #818CF8;
       --radius: 16px;
       --radius-sm: 10px;
     }
+
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg-base);
@@ -40,32 +49,51 @@
       color: var(--text-primary);
       min-height: 100vh;
     }
+
     .top-navbar {
       height: 64px;
       background: rgba(16, 16, 18, 0.65);
       backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
       border-bottom: 1px solid var(--glass-border);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 28px; position: sticky; top: 0; z-index: 100; gap: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      gap: 16px;
     }
+
     .navbar-logo { display: flex; align-items: center; gap: 10px; }
     .navbar-logo-icon { width: 34px; height: 34px; background: linear-gradient(135deg, #2A2A30, #404048); border: 1px solid rgba(255,255,255,0.10); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
     .navbar-logo-text { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px; }
     .navbar-logo-text span { color: var(--accent-glow); font-weight: 500; }
     .navbar-actions { display: flex; align-items: center; gap: 10px; }
+
     .nav-btn {
-      background: var(--glass); border: 1px solid var(--glass-border);
-      color: var(--text-primary); border-radius: var(--radius-sm);
-      padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
-      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      color: var(--text-primary);
+      border-radius: var(--radius-sm);
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       backdrop-filter: blur(var(--glass-blur));
       transition: background 0.18s, border-color 0.18s, transform 0.18s;
-      font-family: 'Inter', sans-serif; white-space: nowrap;
+      font-family: 'Inter', sans-serif;
+      white-space: nowrap;
     }
     .nav-btn:hover { background: var(--glass-strong); border-color: rgba(255,255,255,0.18); transform: translateY(-1px); }
     .nav-btn.logout { color: #FC9999; border-color: rgba(248,113,113,0.18); background: rgba(248,113,113,0.06); }
     .nav-btn.logout:hover { background: rgba(248,113,113,0.12); }
     .navbar-mobile-toggle { display: none; font-size: 20px; cursor: pointer; color: var(--text-muted); background: none; border: none; }
+
     .nav-menu-wrap { position: relative; }
     .nav-menu-dropdown {
       display: none; flex-direction: column; gap: 2px; position: absolute; top: calc(100% + 8px); right: 0;
@@ -76,39 +104,48 @@
     .nav-menu-dropdown.open { display: flex; }
     .nav-menu-item { background: transparent; border: none; color: var(--text-primary); text-align: left; padding: 9px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: background 0.15s; white-space: nowrap; }
     .nav-menu-item:hover { background: var(--glass-strong); }
+
     @media (max-width: 760px) {
       .navbar-actions.desktop-actions { display: none; }
       .navbar-mobile-toggle { display: block; }
     }
+
     .mobile-actions-sheet { display: none; position: fixed; top: 64px; right: 0; left: 0; background: rgba(14,14,16,0.97); backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border); flex-direction: column; gap: 8px; padding: 14px; z-index: 99; }
     .mobile-actions-sheet.open { display: flex; }
+
     .page-content { max-width: 1180px; margin: 0 auto; padding: 28px 24px 60px; }
     @media (max-width: 600px) { .page-content { padding: 18px 14px 50px; } }
+
     .glass-card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--radius); backdrop-filter: blur(var(--glass-blur)) saturate(140%); }
+
     .section-label { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; color: var(--accent-glow); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
     .profile-banner { padding: 24px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-bottom: 22px; }
-    .profile-avatar { width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #2A2A32, #3A3A44); border: 2px solid rgba(255,255,255,0.10); display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: var(--accent-glow); flex-shrink: 0; overflow: hidden; }
-    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+    .profile-avatar { width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #2A2A32, #3A3A44); border: 2px solid rgba(255,255,255,0.10); display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: var(--accent-glow); flex-shrink: 0; }
     .profile-meta h2 { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; }
     .profile-meta .meta-line { font-size: 13.5px; color: var(--text-muted); margin-top: 5px; display: flex; flex-wrap: wrap; gap: 6px 14px; }
     .profile-meta .meta-line span { display: inline-flex; align-items: center; gap: 5px; }
+
     .stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 22px; }
     .stats-row .stat-card { padding: 16px 16px; }
     @media (max-width: 1100px) { .stats-row { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 600px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+
     .stat-card { padding: 18px 20px; transition: border-color 0.2s, transform 0.2s; }
     .stat-card:hover { border-color: rgba(255,255,255,0.18); transform: translateY(-2px); }
     .stat-card .stat-icon-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .stat-card .stat-icon { font-size: 20px; opacity: 0.85; }
     .stat-card .stat-title { font-size: 11.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
     .stat-card .stat-main { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700; color: var(--text-primary); }
-    .stat-card .stat-sub { display: none; }
+    .stat-card .stat-sub { display: none; } 
+
     .profile-info-grid { order: 3; margin-left: auto; display: grid; grid-template-columns: repeat(2, minmax(150px, auto)); gap: 14px 36px; }
     .profile-info-item .info-label { font-size: 10.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px; }
     .profile-info-item .info-value { font-size: 14px; font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
     .profile-info-item .info-sub { font-size: 11.5px; color: var(--accent-glow); margin-top: 2px; }
     @media (max-width: 900px) { .profile-info-grid { margin-left: 0; width: 100%; } }
     @media (max-width: 480px) { .profile-info-grid { grid-template-columns: 1fr; } }
+
     .calendar-card { padding: 20px; margin-bottom: 22px; }
     .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
     .calendar-month-label { font-family: 'Space Grotesk', sans-serif; font-size: 15.5px; font-weight: 600; }
@@ -116,21 +153,51 @@
     .btn-cal-nav { background: var(--glass-strong); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer; transition: background 0.15s; }
     .btn-cal-nav:hover { background: rgba(255,255,255,0.14); }
     .btn-cal-nav:disabled { opacity: 0.35; cursor: not-allowed; }
+
     .calendar-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 16px; font-size: 11.5px; color: var(--text-muted); }
     .legend-dot { display: inline-flex; align-items: center; gap: 5px; }
     .legend-dot span { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+
     .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
     .cal-weekday { text-align: center; font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.4px; padding-bottom: 4px; font-weight: 600; }
+
     .cal-cell {
-      aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; font-size: 12.5px; font-weight: 600;
-      border: 1px solid transparent; position: relative; min-height: 44px;
-      padding: 4px 3px; gap: 2px; overflow: hidden; text-align: center;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 12.5px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      position: relative;
+      min-height: 44px;
+      padding: 4px 3px;
+      gap: 2px;
+      overflow: hidden;
+      text-align: center;
     }
     .cal-cell.empty { background: transparent; }
     .cal-day-num { font-size: 12.5px; font-weight: 600; line-height: 1; }
-    .cal-holiday-name { font-size: 8.5px; font-weight: 800; color: #C2410C; line-height: 1.05; max-width: 100%; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word; text-align: center; padding: 0 2px; letter-spacing: 0.1px; }
+
+    .cal-holiday-name {
+      font-size: 8.5px;
+      font-weight: 800;
+      color: #C2410C;
+      line-height: 1.05;
+      max-width: 100%;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      word-break: break-word;
+      text-align: center;
+      padding: 0 2px;
+      letter-spacing: 0.1px;
+    }
     @media (max-width: 600px) { .cal-holiday-name { font-size: 7px; } .cal-day-num { font-size: 11px; } }
+
     .cal-present { background: rgba(52,211,153,0.16); color: #6EE7B7; border-color: rgba(52,211,153,0.25); }
     .cal-irregular { background: rgba(168,85,247,0.18); color: #C084FC; border-color: rgba(168,85,247,0.3); }
     .cal-absent { background: rgba(248,113,113,0.16); color: #FCA5A5; border-color: rgba(248,113,113,0.25); }
@@ -140,9 +207,11 @@
     .cal-half { background: #FFF7ED; color: #C2410C; border-color: #FDBA74; }
     .cal-day-modal-status.st-halfday { background: #FFF7ED; color: #C2410C; }
     .cal-holiday { background: rgba(249,115,22,0.16); color: #C2410C; border-color: rgba(249,115,22,0.5); font-weight: 700; }
+
     .cal-cell.cal-hasshift::after { content: ''; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-glow); }
     .cal-cell.cal-clickable { cursor: pointer; transition: filter 0.15s; }
     .cal-cell.cal-clickable:hover { filter: brightness(1.35); }
+
     .cal-day-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); z-index: 1300; display: none; align-items: center; justify-content: center; padding: 16px; }
     .cal-day-modal-overlay.open { display: flex; }
     .cal-day-modal-card { background: rgba(24,24,27,0.92); border: 1px solid var(--glass-border); backdrop-filter: blur(28px) saturate(160%); border-radius: var(--radius); box-shadow: 0 24px 60px rgba(0,0,0,0.5); width: 100%; max-width: 380px; max-height: 88vh; overflow-y: auto; padding: 20px; }
@@ -156,6 +225,7 @@
     .cal-day-modal-status.st-off { background: rgba(212,217,230,0.16); color: var(--accent-glow); }
     .cal-day-modal-status.st-leave { background: rgba(96,165,250,0.16); color: #60A5FA; }
     .cal-day-modal-status.st-holiday { background: rgba(249,115,22,0.18); color: #C2410C; }
+
     .cal-day-modal-row { background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 14px; text-align: center; margin-bottom: 12px; }
     .cal-day-modal-row:last-child { margin-bottom: 0; }
     .cal-day-modal-row label { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
@@ -163,6 +233,7 @@
     .cal-day-modal-row.in-time .cal-day-modal-time { color: var(--success); }
     .cal-day-modal-row.out-time .cal-day-modal-time { color: #60A5FA; }
     .cal-day-modal-row.shift-time .cal-day-modal-time { color: var(--accent-glow); font-size: 15px; }
+
     .dt-section { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--glass-border); }
     .dt-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .dt-section-header label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-dim); }
@@ -178,6 +249,7 @@
     .badge-pending-approval { background: rgba(251,191,36,0.12); color: #FCD34D; }
     .badge-correction { background: rgba(192,132,252,0.14); color: var(--purple); }
     .btn-dt-resubmit { margin-top: 8px; background: rgba(192,132,252,0.14); border: 1px solid rgba(192,132,252,0.3); color: var(--purple); border-radius: 8px; padding: 5px 11px; font-size: 11.5px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+
     .dt-add-form { display: none; margin-top: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 14px; }
     .dt-add-form.open { display: block; animation: dtFormIn 0.15s ease-out; }
     @keyframes dtFormIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
@@ -187,6 +259,7 @@
     .dt-add-form .date-row .form-group { margin-bottom: 0; }
     .dt-add-form input[type="time"] { font-size: 12.5px; padding: 9px 8px; }
     @media (max-width: 380px) { .dt-add-form .date-row { grid-template-columns: 1fr; gap: 11px; } }
+
     .tasks-section { margin-bottom: 22px; }
     .task-card { padding: 16px 18px; }
     .task-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
@@ -200,9 +273,13 @@
     .badge-pending { background: rgba(251,191,36,0.12); color: #FCD34D; }
     .badge-completed, .badge-approved { background: rgba(52,211,153,0.12); color: #6EE7B7; }
     .badge-rejected { background: rgba(248,113,113,0.12); color: #FCA5A5; }
+    .badge-daily { background: rgba(129,140,248,0.15); color: #A78BFA; border: 1px solid rgba(129,140,248,0.3); font-size: 10.5px; margin-left: 6px; vertical-align: middle; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+    
     .btn-done { background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.25); color: #34D399; border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: background 0.18s, transform 0.15s; }
     .btn-done:hover { background: rgba(52,211,153,0.2); transform: translateY(-1px); }
+
     .empty-note { padding: 26px; text-align: center; color: var(--text-dim); font-size: 13px; }
+
     .kanban-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: start; }
     @media (max-width: 1100px) { .kanban-board { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 600px) { .kanban-board { grid-template-columns: 1fr; } }
@@ -221,6 +298,7 @@
     .kanban-empty { text-align: center; font-size: 12.5px; color: var(--text-dim); padding: 22px 6px; }
     .task-sub-box { background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px 10px; font-size: 12px; margin: 8px 0; color: var(--text-muted); }
     .task-sub-box a { color: #818CF8; text-decoration: none; word-break: break-all; }
+
     .leave-summary-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 18px; }
     @media (max-width: 900px) { .leave-summary-grid { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 480px) { .leave-summary-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -229,10 +307,12 @@
     .stat-card.mini .stat-main { font-size: 17px; }
     .stat-card.mini .stat-icon-row { margin-bottom: 4px; }
     .stat-card.mini .stat-icon { font-size: 15px; }
+
     .leave-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 18px; align-items: start; }
     @media (max-width: 860px) { .leave-grid { grid-template-columns: 1fr; } }
     .modal-card .leave-grid { grid-template-columns: 1fr; }
     .leave-form-card { padding: 20px; }
+
     .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 13px; }
     .form-group label { font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; }
     .form-group input, .form-group select, .form-group textarea { background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 9px 12px; color: var(--text-primary); font-size: 13.5px; outline: none; font-family: 'Inter', sans-serif; transition: border-color 0.18s, background 0.18s; resize: none; }
@@ -240,15 +320,19 @@
     .form-group select option { background: #18181B; }
     .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     @media (max-width: 900px) { .form-group input, .form-group select, .form-group textarea { font-size: 16px; } }
+
     .btn-submit-leave { width: 100%; background: rgba(244,244,245,0.92); color: #0A0A0B; border: none; border-radius: var(--radius-sm); padding: 11px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Space Grotesk', sans-serif; transition: all 0.2s; margin-top: 2px; }
     .btn-submit-leave:hover { background: #fff; transform: translateY(-1px); }
     .btn-submit-leave:disabled { opacity: 0.6; cursor: not-allowed; }
+
     .my-leaves-card { padding: 20px; }
     .leave-row-item { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,0.05); gap: 10px; flex-wrap: wrap; }
     .leave-row-item:last-child { border-bottom: none; }
     .leave-row-left .leave-type-text { font-size: 13.5px; font-weight: 600; }
     .leave-row-left .leave-dates-text { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
     @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } }
+
     .punch-status-card { padding: 20px 22px; margin-bottom: 10px; }
     .punch-status-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
     .punch-status-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
@@ -256,6 +340,9 @@
     .punch-col { text-align: center; padding: 14px 10px; background: rgba(255,255,255,0.025); border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.05); }
     .punch-col-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
     .punch-col-value { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; }
+
+    #systemToastNotification { font-family: 'Inter', sans-serif; }
+
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.68); backdrop-filter: blur(6px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 16px; }
     .modal-overlay.open { display: flex; }
     .modal-card { background: rgba(18,18,20,0.92); border: 1px solid var(--glass-border); border-radius: var(--radius); max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; backdrop-filter: blur(28px) saturate(160%); box-shadow: 0 24px 60px rgba(0,0,0,0.55); }
@@ -265,6 +352,7 @@
     .modal-close-btn { background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.25); color: #FCA5A5; font-size: 13px; font-weight: 600; cursor: pointer; padding: 6px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; }
     .modal-close-btn:hover { background: rgba(248,113,113,0.2); }
     .modal-body { padding: 22px; }
+
     .id-card-shell { background: linear-gradient(165deg, rgba(40,40,46,0.55), rgba(10,10,12,0.85)); border: 1px solid rgba(108,142,255,0.35); border-radius: var(--radius); padding: 26px 22px; text-align: center; }
     .id-card-brand { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700; letter-spacing: 0.3px; }
     .id-card-brand span { color: #6C8EFF; }
@@ -279,6 +367,7 @@
     .id-card-qr-wrap { background: #fff; width: 140px; height: 140px; margin: 0 auto; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 8px; }
     .btn-download-pdf { width: 100%; margin-top: 18px; background: linear-gradient(135deg, #059669, #34D399); color: #fff; border: none; padding: 11px; border-radius: var(--radius-sm); font-weight: 700; font-size: 14px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; transition: transform 0.18s; }
     .btn-download-pdf:hover { transform: translateY(-1px); }
+
     .bd-tabs { display: flex; gap: 22px; border-bottom: 1px solid var(--glass-border); padding: 0 22px; }
     .bd-tab { padding: 12px 2px; font-size: 13.5px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; }
     .bd-tab.active { color: var(--accent-glow); border-bottom-color: #6C8EFF; }
@@ -302,7 +391,9 @@
     .doc-tile .doc-status { font-size: 10.5px; color: #6EE7B7; margin-top: 4px; }
     .doc-tile .doc-status.empty { color: var(--text-dim); }
     .doc-tile input[type="file"] { display: none; }
+
     .pw-strength-hint { font-size: 11.5px; color: var(--text-dim); margin-top: -5px; margin-bottom: 12px; }
+
     .slip-card { background: #ffffff; color: #111827; border-radius: 12px; padding: 32px 28px; margin-top: 6px; }
     .slip-header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 18px; margin-bottom: 20px; border-bottom: 2px solid #E5E7EB; flex-wrap: wrap; gap: 14px; }
     .slip-brand-name { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: #111827; }
@@ -330,54 +421,8 @@
     .btn-print-slip { background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: #fff; border-radius: var(--radius-sm); padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; display: inline-flex; align-items: center; gap: 7px; transition: background 0.15s; }
     .btn-print-slip:hover { background: rgba(255,255,255,0.16); }
 
-    /* ── 🔁 Assigned Daily Tasks section ── */
-    .daily-tasks-section { margin-bottom: 22px; }
-    .daily-tasks-section-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
-    }
-    .daily-tasks-date-chip {
-      font-size: 12px; font-weight: 600; color: var(--accent-glow);
-      background: var(--glass-strong); border: 1px solid var(--glass-border);
-      padding: 5px 12px; border-radius: 99px;
-    }
-    .daily-tasks-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 14px;
-    }
-    .daily-task-card { padding: 16px 18px; }
-    .daily-task-card.done { border-color: rgba(52,211,153,0.35); background: rgba(52,211,153,0.04); }
-    .dtc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
-    .dtc-title { font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--text-primary); }
-    .dtc-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.45; }
-    .dtc-meta-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-    .dtc-sub-info {
-      background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.22);
-      border-radius: 8px; padding: 9px 12px; font-size: 12px; color: var(--text-muted);
-      margin-bottom: 10px; line-height: 1.5;
-    }
-    .dtc-sub-info b { color: var(--text-primary); font-weight: 600; }
-    .dtc-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    .btn-daily-done {
-      background: rgba(52,211,153,0.14); border: 1px solid rgba(52,211,153,0.32);
-      color: #15803D; border-radius: 8px; padding: 7px 14px; font-size: 12.5px;
-      font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif;
-      transition: background 0.15s, transform 0.12s; flex: 1;
-    }
-    .btn-daily-done:hover { background: rgba(52,211,153,0.24); transform: translateY(-1px); }
-    .btn-daily-done:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .btn-daily-edit {
-      background: var(--glass-strong); border: 1px solid var(--glass-border);
-      color: var(--text-primary); border-radius: 8px; padding: 7px 14px;
-      font-size: 12.5px; font-weight: 700; cursor: pointer;
-      font-family: 'Inter', sans-serif; transition: background 0.15s, transform 0.12s;
-    }
-    .btn-daily-edit:hover { background: rgba(255,255,255,0.14); transform: translateY(-1px); }
-    .daily-tasks-empty {
-      padding: 26px; text-align: center; color: var(--text-dim);
-      font-size: 13px; background: var(--glass); border: 1px solid var(--glass-border);
-      border-radius: var(--radius);
-    }
+    .profile-avatar { overflow: hidden; }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
 
     /* ═══ THEME: Purple light ═══ */
     :root {
@@ -406,8 +451,8 @@
     .form-group select option { background: #FFFFFF; color: #26112B; }
     .form-group input, .form-group select, .form-group textarea { background: #FFFFFF; }
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #6E217D; background: #FFFFFF; }
-    .modal-card, .modal-header { background: #FFFFFF; }
-    .modal-overlay, .cal-day-modal-overlay { background: rgba(38,17,43,0.45); }
+    .modal-card, .modal-header, .ob-card, .ob-footer { background: #FFFFFF; }
+    .modal-overlay, .cal-day-modal-overlay, .ob-overlay { background: rgba(38,17,43,0.45); }
     .modal-close-btn { background: #FEF2F2; border-color: #FECACA; color: #B91C1C; }
     .modal-close-btn:hover { background: #FEE2E2; }
     .btn-cal-nav:hover, .btn-dt-add:hover { background: #E9DAEE; }
@@ -447,17 +492,6 @@
     .btn-download-pdf { background: #6E217D; }
     .punch-col-label { color: #85728F; }
     .bd-tab.active { border-bottom-color: #6E217D; }
-
-    /* 🔁 Daily task light theme */
-    .daily-task-card { background: #FFFFFF; }
-    .daily-task-card.done { background: #F0FDF4; border-color: #86EFAC; }
-    .btn-daily-done { background: #DCFCE7; border-color: #86EFAC; color: #166534; }
-    .btn-daily-done:hover { background: #BBF7D0; }
-    .btn-daily-edit { background: #F1E9F4; border-color: #E4D9E9; color: #6E217D; }
-    .btn-daily-edit:hover { background: #E9DAEE; }
-    .dtc-sub-info { background: #F0FDF4; border-color: #86EFAC; color: #166534; }
-    .dtc-sub-info b { color: #14532D; }
-    .daily-tasks-date-chip { background: #F1E9F4; color: #6E217D; border-color: #E4D9E9; }
   </style>
 </head>
 
@@ -561,6 +595,12 @@
       </div>
     </div>
 
+    <!-- NEW Daily Tasks Section -->
+    <div class="tasks-section" id="dailyTasksSection" style="display: none; margin-bottom: 22px;">
+      <div class="section-label">🔄 Assigned Daily Tasks</div>
+      <div id="dailyTasksListContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
+    </div>
+
     <div class="tasks-section">
       <div class="section-label">📋 My Tasks</div>
       <div class="kanban-board">
@@ -583,46 +623,9 @@
       </div>
     </div>
 
-    <!-- 🔁 Assigned Daily Tasks (NEW) -->
-    <div class="daily-tasks-section">
-      <div class="daily-tasks-section-header">
-        <div class="section-label" style="margin-bottom:0;">🔁 Assigned Daily Tasks</div>
-        <div class="daily-tasks-date-chip" id="dailyTasksTodayChip">Today</div>
-      </div>
-      <div class="daily-tasks-grid" id="dailyTasksGrid">
-        <div class="daily-tasks-empty" style="grid-column: 1 / -1;">Loading…</div>
-      </div>
-    </div>
-
-    <!-- Edit Today's Entry Modal -->
-    <div class="modal-overlay" id="dailyTaskEditModal">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h3>✏️ Edit Today's Entry</h3>
-          <button class="modal-close-btn" onclick="closeDailyTaskEditModal()">✕ Close</button>
-        </div>
-        <div class="modal-body">
-          <div id="dteTaskTitle" style="font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:700; margin-bottom:14px; color:var(--text-primary);"></div>
-          <div class="form-group">
-            <label>Time (e.g. 2h 30m / 14:30)</label>
-            <input type="text" id="dteTime" placeholder="e.g. 2h 30m" />
-          </div>
-          <div class="form-group">
-            <label>Note</label>
-            <textarea id="dteNote" rows="2" placeholder="What did you do?"></textarea>
-          </div>
-          <div class="form-group">
-            <label>Remark</label>
-            <textarea id="dteRemark" rows="2" placeholder="Anything extra to note"></textarea>
-          </div>
-          <button class="btn-submit-leave" id="dteSaveBtn" onclick="saveDailyTaskEdit()">Save Changes</button>
-        </div>
-      </div>
-    </div>
-
     <div class="modal-overlay" id="dailyTasksModal">
       <div class="modal-card">
-        <div class="modal-header"><h3>📝 Daily Tasks</h3><button class="modal-close-btn" onclick="closeDailyTasksModal()">✕ Close</button></div>
+        <div class="modal-header"><h3>📝 My Self-Logged Tasks</h3><button class="modal-close-btn" onclick="closeDailyTasksModal()">✕ Close</button></div>
         <div class="modal-body">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
             <div style="font-size:12px; color:var(--text-muted);">Your self-logged daily work, submitted for admin approval.</div>
@@ -699,6 +702,7 @@
       <div class="calendar-grid" id="calendarGrid">
         <div class="empty-note" style="grid-column: 1 / -1;">Loading calendar...</div>
       </div>
+
       <div class="calendar-legend">
         <span class="legend-dot"><span style="background:#34D399;"></span>Present</span>
         <span class="legend-dot"><span style="background:#C084FC;"></span>Irregular Timing</span>
@@ -996,8 +1000,9 @@
     function toISTDateStr(val) {
       if (!val) return '';
       let d;
-      if (val instanceof Date) { d = val; }
-      else {
+      if (val instanceof Date) {
+        d = val;
+      } else {
         const str = String(val);
         if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
         if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(str)) {
@@ -1014,31 +1019,71 @@
 
     const PUBLIC_HOLIDAYS = {
       2025: {
-        '2025-01-01': "New Year's Day", '2025-01-14': 'Makar Sankranti', '2025-01-26': 'Republic Day',
-        '2025-02-26': 'Maha Shivaratri', '2025-03-14': 'Holi', '2025-03-31': 'Eid-ul-Fitr',
-        '2025-04-06': 'Ram Navami', '2025-04-14': 'Ambedkar Jayanti', '2025-04-18': 'Good Friday',
-        '2025-05-01': 'Labour Day', '2025-06-07': 'Bakrid', '2025-08-15': 'Independence Day',
-        '2025-08-16': 'Janmashtami', '2025-09-05': 'Milad-un-Nabi', '2025-10-02': 'Gandhi Jayanti & Dussehra',
-        '2025-10-20': 'Diwali', '2025-10-21': 'Govardhan Puja', '2025-10-22': 'Bhai Dooj',
-        '2025-11-05': 'Guru Nanak Jayanti', '2025-12-25': 'Christmas'
+        '2025-01-01': "New Year's Day",
+        '2025-01-14': 'Makar Sankranti',
+        '2025-01-26': 'Republic Day',
+        '2025-02-26': 'Maha Shivaratri',
+        '2025-03-14': 'Holi',
+        '2025-03-31': 'Eid-ul-Fitr',
+        '2025-04-06': 'Ram Navami',
+        '2025-04-14': 'Ambedkar Jayanti',
+        '2025-04-18': 'Good Friday',
+        '2025-05-01': 'Labour Day',
+        '2025-06-07': 'Bakrid',
+        '2025-08-15': 'Independence Day',
+        '2025-08-16': 'Janmashtami',
+        '2025-09-05': 'Milad-un-Nabi',
+        '2025-10-02': 'Gandhi Jayanti & Dussehra',
+        '2025-10-20': 'Diwali',
+        '2025-10-21': 'Govardhan Puja',
+        '2025-10-22': 'Bhai Dooj',
+        '2025-11-05': 'Guru Nanak Jayanti',
+        '2025-12-25': 'Christmas'
       },
       2026: {
-        '2026-01-01': "New Year's Day", '2026-01-14': 'Makar Sankranti', '2026-01-26': 'Republic Day',
-        '2026-02-15': 'Maha Shivaratri', '2026-02-19': 'Shivaji Jayanti', '2026-03-03': 'Holika Dahan',
-        '2026-03-04': 'Holi', '2026-03-19': 'Gudi Padwa', '2026-03-21': 'Eid-ul-Fitr',
-        '2026-03-26': 'Ram Navami', '2026-03-31': 'Mahavir Jayanti', '2026-04-03': 'Good Friday',
-        '2026-04-14': 'Ambedkar Jayanti', '2026-05-01': 'Maharashtra Day', '2026-05-27': 'Bakrid',
-        '2026-06-26': 'Muharram', '2026-08-15': 'Independence Day', '2026-08-26': 'Milad-un-Nabi',
-        '2026-08-28': 'Raksha Bandhan', '2026-09-04': 'Janmashtami', '2026-09-14': 'Ganesh Chaturthi',
-        '2026-10-02': 'Gandhi Jayanti', '2026-10-20': 'Dussehra', '2026-11-06': 'Dhanteras',
-        '2026-11-08': 'Diwali', '2026-11-09': 'Govardhan Puja', '2026-11-11': 'Bhai Dooj',
-        '2026-11-24': 'Guru Nanak Jayanti', '2026-12-25': 'Christmas'
+        '2026-01-01': "New Year's Day",
+        '2026-01-14': 'Makar Sankranti',
+        '2026-01-26': 'Republic Day',
+        '2026-02-15': 'Maha Shivaratri',
+        '2026-02-19': 'Shivaji Jayanti',
+        '2026-03-03': 'Holika Dahan',
+        '2026-03-04': 'Holi',
+        '2026-03-19': 'Gudi Padwa',
+        '2026-03-21': 'Eid-ul-Fitr',
+        '2026-03-26': 'Ram Navami',
+        '2026-03-31': 'Mahavir Jayanti',
+        '2026-04-03': 'Good Friday',
+        '2026-04-14': 'Ambedkar Jayanti',
+        '2026-05-01': 'Maharashtra Day',
+        '2026-05-27': 'Bakrid',
+        '2026-06-26': 'Muharram',
+        '2026-08-15': 'Independence Day',
+        '2026-08-26': 'Milad-un-Nabi',
+        '2026-08-28': 'Raksha Bandhan',
+        '2026-09-04': 'Janmashtami',
+        '2026-09-14': 'Ganesh Chaturthi',
+        '2026-10-02': 'Gandhi Jayanti',
+        '2026-10-20': 'Dussehra',
+        '2026-11-06': 'Dhanteras',
+        '2026-11-08': 'Diwali',
+        '2026-11-09': 'Govardhan Puja',
+        '2026-11-11': 'Bhai Dooj',
+        '2026-11-24': 'Guru Nanak Jayanti',
+        '2026-12-25': 'Christmas'
       },
       2027: {
-        '2027-01-01': "New Year's Day", '2027-01-14': 'Makar Sankranti', '2027-01-26': 'Republic Day',
-        '2027-02-15': 'Maha Shivaratri', '2027-03-10': 'Eid-ul-Fitr', '2027-03-22': 'Holi',
-        '2027-04-14': 'Ambedkar Jayanti', '2027-05-01': 'Labour Day', '2027-08-15': 'Independence Day',
-        '2027-10-02': 'Gandhi Jayanti', '2027-10-29': 'Diwali', '2027-12-25': 'Christmas'
+        '2027-01-01': "New Year's Day",
+        '2027-01-14': 'Makar Sankranti',
+        '2027-01-26': 'Republic Day',
+        '2027-02-15': 'Maha Shivaratri',
+        '2027-03-10': 'Eid-ul-Fitr',
+        '2027-03-22': 'Holi',
+        '2027-04-14': 'Ambedkar Jayanti',
+        '2027-05-01': 'Labour Day',
+        '2027-08-15': 'Independence Day',
+        '2027-10-02': 'Gandhi Jayanti',
+        '2027-10-29': 'Diwali',
+        '2027-12-25': 'Christmas'
       }
     };
 
@@ -1106,10 +1151,10 @@
     });
     function getShiftRosterCached(fromDate, toDate) { return getShiftRosterCachedRaw(fromDate + '_' + toDate); }
 
-    const CAL_DEFAULT_SHIFT_START_MIN = 9 * 60;
-    const CAL_DEFAULT_SHIFT_END_MIN = 18 * 60;
+    const CAL_DEFAULT_SHIFT_START_MIN = 9 * 60;  // FIXED: 09:00 AM
+    const CAL_DEFAULT_SHIFT_END_MIN = 18 * 60;   // FIXED: 06:00 PM
     const CAL_GRACE_MIN = 15;
-    const HALF_DAY_MIN = 6 * 60;
+    const HALF_DAY_MIN = 6 * 60; // 6+ hours worked on a late/early day = Half Day
 
     function timeToMinutes(t) {
       if (!t) return null;
@@ -1117,8 +1162,14 @@
       let isPM = str.includes('PM');
       let isAM = str.includes('AM');
       let cleanStr = str.replace(/AM|PM/g, '').trim();
-      if (cleanStr.includes('T')) { cleanStr = cleanStr.split('T')[1]; }
-      if (cleanStr.includes(' ')) { cleanStr = cleanStr.split(' ')[0]; }
+      
+      if (cleanStr.includes('T')) { 
+        cleanStr = cleanStr.split('T')[1]; 
+      }
+      if (cleanStr.includes(' ')) {
+        cleanStr = cleanStr.split(' ')[0]; 
+      }
+
       const p = cleanStr.split(':');
       if (p.length >= 2) {
         let h = parseInt(p[0], 10) || 0;
@@ -1141,7 +1192,7 @@
         const missingPunch = (outMin === null && !isToday);
         if (lateIn || earlyOut) {
           let worked = (inMin !== null && outMin !== null) ? outMin - inMin : 0;
-          if (worked < 0) worked += 24 * 60;
+          if (worked < 0) worked += 24 * 60; // Overnight shift fix
           return worked >= HALF_DAY_MIN ? 'halfday' : 'irregular';
         }
         return missingPunch ? 'irregular' : 'present';
@@ -1155,7 +1206,6 @@
       loadProfile().then(loadShiftAndAttendanceStats);
       loadCalendar();
       loadTasks();
-      loadAssignedDailyTasks();      // 🔁 NEW
       loadMyLeaves();
       loadTodayPunchStatus();
       loadTargetStat();
@@ -1461,7 +1511,7 @@
       const outMin = timeToMinutes(outTime);
       if (inMin === null || outMin === null) return 0;
       let diff = outMin - inMin;
-      if (diff < 0) diff += 24 * 60;
+      if (diff < 0) diff += 24 * 60; // Overnight shift handle karne ke liye
       return diff;
     }
 
@@ -1478,6 +1528,7 @@
       return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
     }
 
+    // ── Profile photo on the avatar ──────────────────────────
     function driveImgUrl(url) {
       if (!url) return '';
       const m = String(url).match(/\/d\/([-\w]{20,})/) || String(url).match(/[?&]id=([-\w]{20,})/);
@@ -1502,44 +1553,65 @@
         if (payload.status !== 'success') return;
         const photos = (payload.data || []).filter(d => d.doc_category === 'profile_photo' && d.file_url);
         if (photos.length) setAvatarPhoto(photos[photos.length - 1].file_url);
-      } catch (e) {}
+      } catch (e) { /* keep initials */ }
     }
 
     function escapeHtml(str) {
       return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
+    /* ══════════════════════════════════════════════════════════════
+       CALENDAR — with PUBLIC HOLIDAYS (orange + name below date)
+       ══════════════════════════════════════════════════════════════ */
     async function loadCalendar() {
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       document.getElementById('calendarMonthLabel').textContent = `${monthNames[CAL_MONTH]} ${CAL_YEAR}`;
+
       const now = new Date();
       document.getElementById('btnCalNext').disabled = (CAL_YEAR === now.getFullYear() && CAL_MONTH === now.getMonth());
+
       const firstDay = formatDateYMD(new Date(CAL_YEAR, CAL_MONTH, 1));
       const lastDay = formatDateYMD(new Date(CAL_YEAR, CAL_MONTH + 1, 0));
       const daysInMonth = new Date(CAL_YEAR, CAL_MONTH + 1, 0).getDate();
       const startWeekday = new Date(CAL_YEAR, CAL_MONTH, 1).getDay();
+
       const gridEl = document.getElementById('calendarGrid');
       gridEl.innerHTML = '<div class="empty-note" style="grid-column: 1 / -1;">Loading calendar...</div>';
+
+      console.log('%c[CAL] Rendering ' + monthNames[CAL_MONTH] + ' ' + CAL_YEAR, 'color: orange; font-weight: bold');
+      console.log('[CAL] PUBLIC_HOLIDAYS[' + CAL_YEAR + '] available:', !!PUBLIC_HOLIDAYS[CAL_YEAR]);
+
       let attendanceMap = {}, leaveDatesSet = new Set(), shiftMap = {};
+
       let attendanceLogs = [], approvedLeaves = [], backendHolidays = [], rosterRows = [];
       try {
         [attendanceLogs, approvedLeaves, backendHolidays, rosterRows] = await Promise.all([
-          getAttendanceCached(), getApprovedLeavesCached(), getHolidaysCached(CAL_YEAR), getShiftRosterCached(firstDay, lastDay)
+          getAttendanceCached(),
+          getApprovedLeavesCached(),
+          getHolidaysCached(CAL_YEAR),
+          getShiftRosterCached(firstDay, lastDay)
         ]);
-      } catch (e) {}
+      } catch (e) {
+        console.error('[CAL] Promise.all failed:', e);
+      }
+
       attendanceLogs = Array.isArray(attendanceLogs) ? attendanceLogs : [];
       approvedLeaves = Array.isArray(approvedLeaves) ? approvedLeaves : [];
       backendHolidays = Array.isArray(backendHolidays) ? backendHolidays : [];
       rosterRows = Array.isArray(rosterRows) ? rosterRows : [];
+
       attendanceLogs.forEach(l => {
         const dateKey = toISTDateStr(l['Date']);
         if (dateKey >= firstDay && dateKey <= lastDay) attendanceMap[dateKey] = l;
       });
+
       approvedLeaves.forEach(l => {
         let d = new Date(l.from_date);
         const to = new Date(l.to_date);
         while (d <= to) { leaveDatesSet.add(formatDateYMD(d)); d.setDate(d.getDate() + 1); }
       });
+
+      // ── Build holiday map ──────────────────────────────────
       const holidayNameMap = {};
       backendHolidays.forEach(h => {
         const key = toISTDateStr(h.date);
@@ -1548,11 +1620,16 @@
       const localYearHolidays = PUBLIC_HOLIDAYS[CAL_YEAR] || {};
       Object.keys(localYearHolidays).forEach(k => { holidayNameMap[k] = localYearHolidays[k]; });
       const holidaySet = new Set(Object.keys(holidayNameMap));
+
+      console.log('[CAL] Merged holiday count:', holidaySet.size);
+      console.log('[CAL] Sample holidays:', Object.entries(holidayNameMap).slice(0, 5));
+
       rosterRows.forEach(a => {
         if (a.emp_id !== USER.employee_id) return;
         const dk = toISTDateStr(a.date);
         if (dk) shiftMap[dk] = { shift_name: a.shift_name, start_time: a.start_time, end_time: a.end_time };
       });
+
       let defaultTmpl = null;
       if (EMPLOYEE_DATA && EMPLOYEE_DATA.default_shift_id) {
         try {
@@ -1560,12 +1637,16 @@
           defaultTmpl = templates.find(s => s.shift_id === EMPLOYEE_DATA.default_shift_id) || null;
         } catch (e) {}
       }
+
       const weeklyOff = (EMPLOYEE_DATA && EMPLOYEE_DATA.weekly_off) || null;
       const weekdayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
       let html = '';
       let cntPresent = 0, cntIrregular = 0, cntAbsent = 0, cntHalf = 0;
+
       ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(w => html += `<div class="cal-weekday">${w}</div>`);
       for (let i = 0; i < startWeekday; i++) html += `<div class="cal-cell empty"></div>`;
+
       for (let day = 1; day <= daysInMonth; day++) {
         const dateObj = new Date(CAL_YEAR, CAL_MONTH, day);
         const dateKey = formatDateYMD(dateObj);
@@ -1576,18 +1657,25 @@
         const isOffDay = (weeklyOff && weekdayNames[dateObj.getDay()] === weeklyOff) || isHoliday;
         const dayShift = shiftMap[dateKey];
         const log = attendanceMap[dateKey];
+
         const shiftStartMin = dayShift ? timeToMinutes(dayShift.start_time) : (defaultTmpl ? timeToMinutes(defaultTmpl.start_time) : null);
         const shiftEndMin = dayShift ? timeToMinutes(dayShift.end_time) : (defaultTmpl ? timeToMinutes(defaultTmpl.end_time) : null);
+
         let cls = 'cal-cell';
         let statusLabel = '';
         let statusKey = '';
+
         if (isHoliday) {
-          cls += ' cal-holiday'; statusLabel = 'Public Holiday'; statusKey = 'holiday';
+          cls += ' cal-holiday';
+          statusLabel = 'Public Holiday';
+          statusKey = 'holiday';
           if (!isFuture && log && log['In-Time']) cntPresent++;
         } else if (isFuture) {
           cls += isOffDay ? ' cal-off' : ' cal-future';
         } else if (leaveDatesSet.has(dateKey)) {
-          cls += ' cal-leave'; statusLabel = 'Approved Leave'; statusKey = 'leave';
+          cls += ' cal-leave';
+          statusLabel = 'Approved Leave';
+          statusKey = 'leave';
         } else {
           const status = calDayStatus(log, isOffDay, isFuture, isToday,
             shiftStartMin !== null ? shiftStartMin : CAL_DEFAULT_SHIFT_START_MIN,
@@ -1598,12 +1686,16 @@
           else if (status === 'absent') { cls += ' cal-absent'; statusLabel = 'Absent'; statusKey = 'absent'; cntAbsent++; }
           else if (isOffDay) { cls += ' cal-off'; statusLabel = 'Weekly Off'; statusKey = 'off'; }
         }
+
         if (dayShift) cls += ' cal-hasshift';
+
         let tipText = `${dateKey}${statusLabel ? ' — ' + statusLabel : ''}`;
         if (isHoliday) tipText += `\n🎉 ${holidayName}`;
         if (log) tipText += `\nIN: ${log['In-Time'] ? formatTime12Hour(log['In-Time']) : '—'}  OUT: ${log['Out-Time'] ? formatTime12Hour(log['Out-Time']) : '—'}`;
         if (dayShift) tipText += `\nShift Override: ${dayShift.shift_name || ''} (${formatTime12Hour(dayShift.start_time)}–${formatTime12Hour(dayShift.end_time)})`;
+
         const holidayNameHtml = holidayName ? `<span class="cal-holiday-name">${escapeHtml(holidayName)}</span>` : '';
+
         const isClickable = !isFuture;
         if (isClickable) {
           cls += ' cal-clickable';
@@ -1612,6 +1704,7 @@
           html += `<div class="${cls}" title="${tipText}"><span class="cal-day-num">${day}</span>${holidayNameHtml}</div>`;
         }
       }
+
       if (CAL_YEAR === _istNow.getFullYear() && CAL_MONTH === _istNow.getMonth()) {
         const leaveCount = [...leaveDatesSet].filter(d => d >= firstDay && d <= lastDay).length;
         const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
@@ -1620,6 +1713,7 @@
         setText('statAbsentDays', cntAbsent);
         setText('statLeaveDays', leaveCount);
       }
+
       window._calAttMap = attendanceMap;
       window._calShiftMap = shiftMap;
       window._calDefaultTmpl = defaultTmpl;
@@ -1627,7 +1721,9 @@
       window._calWeeklyOff = weeklyOff;
       window._calHolidaySet = holidaySet;
       window._calHolidayNameMap = holidayNameMap;
+
       gridEl.innerHTML = html;
+      console.log('[CAL] Rendered cells:', daysInMonth, '| Holidays shown:', holidaySet.size);
     }
 
     function calOpenDayModal(dateKey) {
@@ -1637,14 +1733,17 @@
       const defaultTmpl = window._calDefaultTmpl;
       const isLeave = (window._calLeaveDates || new Set()).has(dateKey);
       const holidayName = (window._calHolidayNameMap || {})[dateKey] || '';
+
       const dateObj = parseYMD(dateKey);
       const title = dateObj ? dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : dateKey;
       document.getElementById('calDayModalTitle').textContent = title;
+
       const weekdayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const isHoliday = !!holidayName;
       const isOffDay = dateObj && ((window._calWeeklyOff && weekdayNames[dateObj.getDay()] === window._calWeeklyOff) || isHoliday);
       const isToday = dateObj && dateObj.getTime() === TODAY.getTime();
       let statusKey = 'absent', statusLabel = 'Absent';
+
       if (isHoliday) { statusKey = 'holiday'; statusLabel = 'Public Holiday: ' + holidayName; }
       else if (isLeave) { statusKey = 'leave'; statusLabel = 'Approved Leave'; }
       else if (record && record['In-Time']) {
@@ -1656,16 +1755,20 @@
         statusKey = status; statusLabel = status === 'irregular' ? 'Irregular Timing' : status === 'halfday' ? 'Half Day' : 'Present';
       } else if (isOffDay) { statusKey = 'off'; statusLabel = 'Weekly Off'; }
       else if (isToday) { statusKey = 'off'; statusLabel = 'Today — not punched yet'; }
+
       const statusEl = document.getElementById('calDayModalStatus');
       statusEl.className = 'cal-day-modal-status st-' + statusKey;
       statusEl.textContent = statusLabel;
+
       document.getElementById('calDayModalIn').textContent = (record && record['In-Time']) ? formatTime12Hour(record['In-Time']) : '—';
       document.getElementById('calDayModalOut').textContent = (record && record['Out-Time']) ? formatTime12Hour(record['Out-Time']) : (record && record['In-Time'] ? (isToday ? 'Still In' : 'Not punched out') : '—');
+
       const shiftLabel = document.getElementById('calDayModalShiftLabel');
       const shiftEl = document.getElementById('calDayModalShift');
       if (dayShift) { shiftLabel.textContent = 'Shift Override (by Admin)'; shiftEl.textContent = `${dayShift.shift_name || 'Shift'} (${formatTime12Hour(dayShift.start_time)} – ${formatTime12Hour(dayShift.end_time)})`; }
       else if (defaultTmpl) { shiftLabel.textContent = 'Standard Shift'; shiftEl.textContent = `${defaultTmpl.shift_name || 'Shift'} (${formatTime12Hour(defaultTmpl.start_time)} – ${formatTime12Hour(defaultTmpl.end_time)})`; }
       else { shiftLabel.textContent = 'Shift'; shiftEl.textContent = 'No shift assigned'; }
+
       document.getElementById('calDayModalOverlay').classList.add('open');
     }
 
@@ -1805,132 +1908,6 @@
       loadCalendar();
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       🔁 ASSIGNED DAILY TASKS (admin-assigned recurring) — NEW
-       ═══════════════════════════════════════════════════════════ */
-    let DAILY_TASKS_CACHE = {};
-    let _dteCurrentTaskId = null;
-
-    async function loadAssignedDailyTasks() {
-      const grid = document.getElementById('dailyTasksGrid');
-      const chip = document.getElementById('dailyTasksTodayChip');
-      try {
-        const res = await fetch(`${API_URL}?action=getMyDailyTasks&token=${TOKEN}&_ts=${Date.now()}`, { cache: 'no-store' });
-        const payload = await res.json();
-        if (payload.status !== 'success') {
-          grid.innerHTML = '<div class="daily-tasks-empty" style="grid-column:1/-1;">Could not load daily tasks.</div>';
-          return;
-        }
-        const data = payload.data || {};
-        const tasks = data.tasks || [];
-        if (chip && data.date) {
-          const d = parseDMY(data.date) || new Date(data.date);
-          chip.textContent = 'Today: ' + d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-        }
-        DAILY_TASKS_CACHE = {};
-        tasks.forEach(t => { DAILY_TASKS_CACHE[t.task_id] = t; });
-        if (!tasks.length) {
-          grid.innerHTML = '<div class="daily-tasks-empty" style="grid-column:1/-1;">Aaj ke liye koi assigned daily task nahi hai.</div>';
-          return;
-        }
-        grid.innerHTML = tasks.map(renderDailyTaskCard).join('');
-      } catch (e) {
-        grid.innerHTML = '<div class="daily-tasks-empty" style="grid-column:1/-1;">Network error.</div>';
-      }
-    }
-
-    function renderDailyTaskCard(t) {
-      const isDone = !!t.submitted;
-      const priorityCls = priorityClass[t.priority] || 'badge-low';
-      const endBit = t.end_date ? `<span class="badge badge-low">Ends: ${escapeHtml(t.end_date)}</span>` : '';
-      const subInfo = isDone ? `
-        <div class="dtc-sub-info">
-          ✅ <b>Submitted today</b><br>
-          ${t.submission.submission_time ? `Time: <b>${escapeHtml(t.submission.submission_time)}</b><br>` : ''}
-          ${t.submission.note   ? `Note: ${escapeHtml(t.submission.note)}<br>` : ''}
-          ${t.submission.remark ? `Remark: ${escapeHtml(t.submission.remark)}` : ''}
-        </div>` : '';
-      const actions = isDone
-        ? `<button class="btn-daily-edit" onclick="openDailyTaskEdit('${t.task_id}')">✏️ Edit</button>`
-        : `<button class="btn-daily-done" id="doneBtn_${t.task_id}" onclick="submitDailyTaskDone('${t.task_id}')">✓ Done</button>`;
-      return `
-        <div class="glass-card daily-task-card ${isDone ? 'done' : ''}" id="dtCard_${t.task_id}">
-          <div class="dtc-top">
-            <div class="dtc-title">${escapeHtml(t.title || '')}</div>
-            <span class="badge ${priorityCls}">${(t.priority || '').toUpperCase()}</span>
-          </div>
-          ${t.description ? `<div class="dtc-desc">${escapeHtml(t.description.slice(0, 120))}${t.description.length > 120 ? '…' : ''}</div>` : ''}
-          <div class="dtc-meta-row">${endBit}</div>
-          ${subInfo}
-          <div class="dtc-actions">${actions}</div>
-        </div>`;
-    }
-
-    async function submitDailyTaskDone(taskId) {
-      const btn = document.getElementById('doneBtn_' + taskId);
-      if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({ token: TOKEN, action: 'submitDailyTaskDone', task_id: taskId })
-        });
-        const out = await res.json();
-        if (out.status === 'success') {
-          showToast('Aaj ka task done ✓');
-          await loadAssignedDailyTasks();
-        } else {
-          showToast(out.message || 'Could not submit.');
-          if (btn) { btn.disabled = false; btn.textContent = '✓ Done'; }
-        }
-      } catch (e) {
-        showToast('Network error.');
-        if (btn) { btn.disabled = false; btn.textContent = '✓ Done'; }
-      }
-    }
-
-    function openDailyTaskEdit(taskId) {
-      const t = DAILY_TASKS_CACHE[taskId];
-      if (!t || !t.submission) { showToast('Pehle Done dabao.'); return; }
-      _dteCurrentTaskId = taskId;
-      document.getElementById('dteTaskTitle').textContent = t.title || '';
-      document.getElementById('dteTime').value   = t.submission.submission_time || '';
-      document.getElementById('dteNote').value   = t.submission.note || '';
-      document.getElementById('dteRemark').value = t.submission.remark || '';
-      document.getElementById('dailyTaskEditModal').classList.add('open');
-    }
-    function closeDailyTaskEditModal() {
-      document.getElementById('dailyTaskEditModal').classList.remove('open');
-      _dteCurrentTaskId = null;
-    }
-
-    async function saveDailyTaskEdit() {
-      if (!_dteCurrentTaskId) return;
-      const btn = document.getElementById('dteSaveBtn');
-      btn.disabled = true; btn.textContent = 'Saving…';
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            token: TOKEN,
-            action: 'updateDailyTaskDone',
-            task_id: _dteCurrentTaskId,
-            submission_time: document.getElementById('dteTime').value.trim(),
-            note:   document.getElementById('dteNote').value.trim(),
-            remark: document.getElementById('dteRemark').value.trim()
-          })
-        });
-        const out = await res.json();
-        if (out.status === 'success') {
-          showToast('Entry updated ✓');
-          closeDailyTaskEditModal();
-          await loadAssignedDailyTasks();
-        } else {
-          showToast(out.message || 'Could not update.');
-        }
-      } catch (e) { showToast('Network error.'); }
-      finally { btn.disabled = false; btn.textContent = 'Save Changes'; }
-    }
-
     const priorityClass = { high: 'badge-high', medium: 'badge-medium', low: 'badge-low' };
     let _submitWorkTaskId = null;
     let _submitWorkMode = 'submit';
@@ -1942,25 +1919,25 @@
     }
 
     const STARTED_KEY = 'started_tasks_' + (USER && USER.employee_id);
-    function getStartedTasks() {
-      try {
-        const data = localStorage.getItem(STARTED_KEY);
-        if (!data) return {};
-        const parsed = JSON.parse(data);
-        if (Array.isArray(parsed)) {
-          const obj = {};
-          parsed.forEach(id => obj[id] = Date.now());
-          localStorage.setItem(STARTED_KEY, JSON.stringify(obj));
-          return obj;
-        }
-        return parsed;
-      } catch (e) { return {}; }
+    function getStartedTasks() { 
+        try { 
+            const data = localStorage.getItem(STARTED_KEY);
+            if (!data) return {};
+            const parsed = JSON.parse(data);
+            if (Array.isArray(parsed)) {
+                const obj = {};
+                parsed.forEach(id => obj[id] = Date.now());
+                localStorage.setItem(STARTED_KEY, JSON.stringify(obj));
+                return obj;
+            }
+            return parsed;
+        } catch (e) { return {}; } 
     }
     function startTask(taskId) {
       const list = getStartedTasks();
-      if (!list[taskId]) {
-        list[taskId] = new Date().toISOString();
-        localStorage.setItem(STARTED_KEY, JSON.stringify(list));
+      if (!list[taskId]) { 
+          list[taskId] = new Date().toISOString(); 
+          localStorage.setItem(STARTED_KEY, JSON.stringify(list)); 
       }
       showToast('Task started!');
       loadTasks();
@@ -1978,14 +1955,29 @@
         const res = await fetch(`${API_URL}?action=getTasks&token=${TOKEN}`);
         const payload = await res.json();
         if (payload.status !== 'success') return;
-        const arr = ((payload.data && payload.data.data) || [])
-          .filter(t => t.assigned_to === USER.employee_id)
-          .filter(t => String(t.is_daily).toUpperCase() !== 'TRUE');   // 🔁 daily tasks alag section mein
+        const arr = ((payload.data && payload.data.data) || []).filter(t => t.assigned_to === USER.employee_id);
+        
         TASK_CACHE = {};
-        arr.forEach(t => { TASK_CACHE[t.task_id] = t; });
+        const dailyTasks = [];
+        const kanbanTasks = [];
+
+        arr.forEach(t => {
+          TASK_CACHE[t.task_id] = t;
+          if (t.is_daily) {
+            dailyTasks.push(t);
+          } else {
+            kanbanTasks.push(t);
+          }
+        });
+
+        // Render Daily Tasks Section
+        renderDailyTasksSection(dailyTasks);
+
+        // Render Kanban Tasks
         const cols = { assigned: [], progress: [], review: [], done: [] };
-        arr.forEach(t => cols[getTaskColumn(t)].push(t));
+        kanbanTasks.forEach(t => cols[getTaskColumn(t)].push(t));
         cols.done.sort((a, b) => ((parseDMY(b.due_date) || 0) - (parseDMY(a.due_date) || 0)));
+        
         const emptyText = { assigned: 'No new task assigned.', progress: 'No task in progress.', review: 'Nothing under review.', done: 'No completed task yet.' };
         Object.keys(cols).forEach(key => {
           const name = key.charAt(0).toUpperCase() + key.slice(1);
@@ -1995,6 +1987,57 @@
       } catch (e) { showToast('Could not load tasks.'); }
     }
 
+    function renderDailyTasksSection(tasks) {
+      const section = document.getElementById('dailyTasksSection');
+      const container = document.getElementById('dailyTasksListContainer');
+      if (!tasks || tasks.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+
+      tasks.sort((a, b) => {
+        const aDone = a.status === 'completed' ? 1 : 0;
+        const bDone = b.status === 'completed' ? 1 : 0;
+        if (aDone !== bDone) return aDone - bDone;
+        return (parseDMY(a.due_date) || 0) - (parseDMY(b.due_date) || 0);
+      });
+
+      section.style.display = 'block';
+      container.innerHTML = tasks.map(t => {
+        const isCompleted = t.status === 'completed';
+        const dueD = parseDMY(t.due_date);
+        const dueText = formatTaskDate(t.due_date);
+        const isOverdue = dueD && dueD < TODAY && !isCompleted;
+
+        return `
+          <div class="glass-card task-card" style="margin-bottom: 10px; border-left: 3px solid ${isCompleted ? 'var(--success)' : 'var(--indigo)'};">
+            <div class="task-top">
+              <div class="task-title">${escapeHtml(t.title || '')} <span class="badge badge-daily">🔄 Daily</span></div>
+              <span class="badge ${priorityClass[t.priority] || 'badge-low'}">${(t.priority || '').toUpperCase()}</span>
+            </div>
+            ${t.description ? `<div style="font-size:11.5px;color:var(--text-dim);margin:4px 0;">${escapeHtml(t.description)}</div>` : ''}
+            <div class="task-due" ${isOverdue ? 'style="color:var(--danger);"' : ''}>
+              📅 Due: ${dueText || 'No due date'} ${isOverdue ? '⚠️' : ''}
+            </div>
+            ${t.submission_link && t.submission_link !== 'N/A' ? `
+              <div class="task-sub-box" style="margin-top:8px;">
+                🔗 <a href="${escapeHtml(t.submission_link)}" target="_blank" rel="noopener">View submitted work</a>
+                ${t.submission_note ? `<div style="margin-top:4px;">📝 ${escapeHtml(t.submission_note)}</div>` : ''}
+              </div>
+            ` : ''}
+            <div class="task-footer" style="display:flex; align-items:center; justify-content:space-between; margin-top:10px;">
+              <div style="display:flex; gap:8px;">
+                ${isCompleted 
+                  ? `<span style="color:var(--success);font-size:12px;font-weight:600;display:flex;align-items:center;">✓ Completed</span>` 
+                  : `<button class="btn-done" onclick="completeMyTask('${t.task_id}')">✓ Done</button>`
+                }
+                <button class="btn-done" style="background:rgba(251,191,36,0.12); color:#FCD34D; border-color:rgba(251,191,36,0.25);" onclick="openSubmitModal('${t.task_id}', 'edit')">✏️ Edit</button>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
     function renderTaskCard(t) {
       const col = getTaskColumn(t);
       const dueD = parseDMY(t.due_date);
@@ -2002,18 +2045,21 @@
       const isOverdue = dueD && dueD < TODAY && col !== 'done';
       const isRejected = t.submission_status === 'rejected';
       const id = t.task_id;
+
       const formatDateTime = (val) => {
         if (!val) return 'N/A';
         const d = parseDMY(val) || new Date(val);
-        if (isNaN(d.getTime())) return String(val);
+        if (isNaN(d.getTime())) return String(val); 
         if (String(val).includes(':') || String(val).includes('T')) {
-          return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' +
-                 d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' +
+                   d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
         }
         return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
       };
+
       const subBox = (t.submission_link && (col === 'review' || col === 'done'))
         ? `<div class="task-sub-box">🔗 <a href="${escapeHtml(t.submission_link)}" target="_blank" rel="noopener">View submitted work</a>${t.submission_note ? `<div style="margin-top:4px;">📝 ${escapeHtml(t.submission_note)}</div>` : ''}</div>` : '';
+
       let dateLine = '';
       if (col === 'assigned') {
         const assignD = t.assigned_at || t.created_at || t.assigned_date || t.date;
@@ -2032,6 +2078,7 @@
         const doneText = doneD ? formatDateTime(doneD) : 'N/A';
         dateLine = `<div class="task-due" style="color:var(--success);">✓ Done: ${doneText}</div>`;
       }
+
       let footerAction = '';
       if (col === 'done') {
         footerAction = `<span style="color:var(--success);font-size:12px;font-weight:600;">✓ Accepted</span>`;
@@ -2043,7 +2090,9 @@
       } else {
         footerAction = `<button class="btn-done" onclick="startTask('${id}')">▶ Start Work</button>`;
       }
+
       const rejectBox = (col === 'progress' && isRejected) ? `<div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.22);border-radius:8px;padding:8px 10px;font-size:11.5px;color:#F87171;margin:6px 0;">✕ Rejected: ${escapeHtml(t.review_note || 'Reason not given')}</div>` : '';
+
       return `
         <div class="glass-card task-card">
           <div class="task-top">
@@ -2258,7 +2307,7 @@
         const n = getISTDate();
         const nowSec = n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds();
         let diffSec = nowSec - inMin * 60;
-        if (diffSec < 0) diffSec += 24 * 3600;
+        if (diffSec < 0) diffSec += 24 * 3600; // Overnight fix
         el.textContent = formatHMS(Math.max(0, diffSec));
       };
       tick();
@@ -2273,7 +2322,7 @@
       try {
         const res = await fetch(`${API_URL}?action=getEmployeeTargets&token=${TOKEN}&limit=50&_ts=${Date.now()}`, { cache: 'no-store' });
         const payload = await res.json();
-        if (payload.status !== 'success') { subEl.textContent = payload.message ? ('Could not load: ' + payload.message) : 'Could not load'; return; }
+        if (payload.status !== 'success') { console.warn('[TARGET]', payload.message); subEl.textContent = payload.message ? ('Could not load: ' + payload.message) : 'Could not load'; return; }
         const list = (payload.data && payload.data.data) || [];
         if (!list.length) { mainEl.textContent = '—'; subEl.textContent = 'No target assigned'; return; }
         const m = _istNow.getMonth() + 1, y = _istNow.getFullYear();
@@ -2305,21 +2354,23 @@
             if (inTime && !outTime) {
               badge.style.display = 'inline-flex';
               badge.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#22C55E;display:inline-block;animation:pulse 1.5s ease-in-out infinite;"></span> Punched In';
-            } else if (inTime && outTime) {
-              const workedMin = diffMinutes(inTime, outTime);
-              badge.style.display = 'inline-flex';
-              if (workedMin >= HALF_DAY_MIN) {
-                badge.style.background = 'rgba(110,33,125,0.10)';
-                badge.style.color = '#6E217D';
-                badge.style.borderColor = 'rgba(110,33,125,0.28)';
-                badge.innerHTML = '✓ Day Complete';
-              } else {
-                badge.style.background = '#FFF7ED';
-                badge.style.color = '#C2410C';
-                badge.style.borderColor = '#FDBA74';
-                badge.innerHTML = '◐ Half Day';
-              }
-            }
+             } else if (inTime && outTime) {
+  const workedMin = diffMinutes(inTime, outTime);
+  badge.style.display = 'inline-flex';
+  if (workedMin >= HALF_DAY_MIN) {
+    // 6 ghante ya usse zyada → Day Complete
+    badge.style.background = 'rgba(110,33,125,0.10)';
+    badge.style.color = '#6E217D';
+    badge.style.borderColor = 'rgba(110,33,125,0.28)';
+    badge.innerHTML = '✓ Day Complete';
+  } else {
+    // 6 ghante se kam → Half Day
+    badge.style.background = '#FFF7ED';
+    badge.style.color = '#C2410C';
+    badge.style.borderColor = '#FDBA74';
+    badge.innerHTML = '◐ Half Day';
+  }
+}
             startWorkTimer(inTime, outTime);
             if (inTime) { const card = document.getElementById('punchStatusCard'); if (card) card.style.borderColor = 'rgba(34,197,94,0.4)'; }
           } else {
@@ -2332,46 +2383,57 @@
     }
 
     function parseHolidayDate(dateVal) {
-      if (!dateVal) return null;
-      let str = String(dateVal).trim();
-      let m = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
-      if (m) return new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
-      m = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
-      if (m) return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
-      const d = new Date(str);
-      return isNaN(d.getTime()) ? null : d;
+        if (!dateVal) return null;
+        let str = String(dateVal).trim();
+        let m = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+        if (m) return new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+        
+        m = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+        if (m) return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+        
+        const d = new Date(str);
+        return isNaN(d.getTime()) ? null : d;
     }
 
     async function openHolidayCalendarModal() {
       document.getElementById('holidayCalendarModal').classList.add('open');
       const listEl = document.getElementById('holidayCalendarList');
       listEl.innerHTML = '<div class="empty-note">Loading...</div>';
+      
       try {
         const year = new Date().getFullYear();
         const holidays = await getHolidaysCached(year);
+        
         if (!holidays || holidays.length === 0) {
           listEl.innerHTML = '<div class="empty-note">No holidays announced yet for this year.</div>';
           return;
         }
+        
         holidays.sort((a, b) => {
-          const da = parseHolidayDate(a.date || a.holiday_date) || new Date(a.date);
-          const db = parseHolidayDate(b.date || b.holiday_date) || new Date(b.date);
-          return da - db;
+            const da = parseHolidayDate(a.date || a.holiday_date) || new Date(a.date);
+            const db = parseHolidayDate(b.date || b.holiday_date) || new Date(b.date);
+            return da - db;
         });
+
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         let html = '';
         let currentMonth = -1;
+        
         holidays.forEach(h => {
           const dateVal = h.date || h.holiday_date;
           if (!dateVal) return;
+
           const d = parseHolidayDate(dateVal);
           if (!d || isNaN(d.getTime())) return;
+
           const m = d.getMonth();
           const dateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+          
           if (m !== currentMonth) {
             currentMonth = m;
             html += `<div style="margin-top:16px; margin-bottom:8px; font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--accent-glow); border-bottom:1px solid var(--glass-border); padding-bottom:4px;">${months[m]}</div>`;
           }
+          
           html += `<div class="leave-row-item" style="padding: 10px 0;">
               <div class="leave-row-left">
                 <div class="leave-type-text">${escapeHtml(h.name || h.holiday_name || h.description || 'Holiday')}</div>
@@ -2380,9 +2442,15 @@
               <span class="badge badge-completed">Holiday</span>
           </div>`;
         });
-        if (!html) { listEl.innerHTML = '<div class="empty-note">No valid holidays found.</div>'; }
-        else { listEl.innerHTML = html; }
-      } catch (e) { listEl.innerHTML = '<div class="empty-note">Could not load holidays.</div>'; }
+        
+        if (!html) {
+            listEl.innerHTML = '<div class="empty-note">No valid holidays found.</div>';
+        } else {
+            listEl.innerHTML = html;
+        }
+      } catch (e) {
+        listEl.innerHTML = '<div class="empty-note">Could not load holidays.</div>';
+      }
     }
   </script>
 
