@@ -478,6 +478,7 @@
     .cal-holiday { background: rgba(249,115,22,0.20); color: #C2410C; border-color: rgba(249,115,22,0.7); }
     .cal-holiday-name { color: #9A3412; }
     .cal-cell.cal-hasshift::after { background: #6E217D; }
+    .cal-day-modal-card { background: #FFFFFF; border-color: #E4D9E9; box-shadow: 0 24px 60px rgba(38,17,43,0.22); }
     .cal-day-modal-row, .dt-item { background: #FAF7FB; }
     .cal-day-modal-row.out-time .cal-day-modal-time { color: #1D4ED8; }
     .cal-day-modal-status.st-off { background: #F1F1F4; color: #52525B; }
@@ -1669,8 +1670,8 @@
 
         let tipText = `${dateKey}${statusLabel ? ' — ' + statusLabel : ''}`;
         if (isHoliday) tipText += `\n🎉 ${holidayName}`;
-        if (log) tipText += `\nIN: ${log['In-Time'] || '—'}  OUT: ${log['Out-Time'] || '—'}`;
-        if (dayShift) tipText += `\nShift Override: ${dayShift.shift_name || ''} (${dayShift.start_time || '—'}–${dayShift.end_time || '—'})`;
+        if (log) tipText += `\nIN: ${log['In-Time'] ? formatTime12Hour(log['In-Time']) : '—'}  OUT: ${log['Out-Time'] ? formatTime12Hour(log['Out-Time']) : '—'}`;
+        if (dayShift) tipText += `\nShift Override: ${dayShift.shift_name || ''} (${formatTime12Hour(dayShift.start_time)}–${formatTime12Hour(dayShift.end_time)})`;
 
         const holidayNameHtml = holidayName ? `<span class="cal-holiday-name">${escapeHtml(holidayName)}</span>` : '';
 
@@ -1738,13 +1739,13 @@
       statusEl.className = 'cal-day-modal-status st-' + statusKey;
       statusEl.textContent = statusLabel;
 
-      document.getElementById('calDayModalIn').textContent = (record && record['In-Time']) ? record['In-Time'] : '—';
-      document.getElementById('calDayModalOut').textContent = (record && record['Out-Time']) ? record['Out-Time'] : (record && record['In-Time'] ? (isToday ? 'Still In' : 'Not punched out') : '—');
+      document.getElementById('calDayModalIn').textContent = (record && record['In-Time']) ? formatTime12Hour(record['In-Time']) : '—';
+      document.getElementById('calDayModalOut').textContent = (record && record['Out-Time']) ? formatTime12Hour(record['Out-Time']) : (record && record['In-Time'] ? (isToday ? 'Still In' : 'Not punched out') : '—');
 
       const shiftLabel = document.getElementById('calDayModalShiftLabel');
       const shiftEl = document.getElementById('calDayModalShift');
-      if (dayShift) { shiftLabel.textContent = 'Shift Override (by Admin)'; shiftEl.textContent = `${dayShift.shift_name || 'Shift'} (${dayShift.start_time || '—'} – ${dayShift.end_time || '—'})`; }
-      else if (defaultTmpl) { shiftLabel.textContent = 'Standard Shift'; shiftEl.textContent = `${defaultTmpl.shift_name || 'Shift'} (${defaultTmpl.start_time || '—'} – ${defaultTmpl.end_time || '—'})`; }
+      if (dayShift) { shiftLabel.textContent = 'Shift Override (by Admin)'; shiftEl.textContent = `${dayShift.shift_name || 'Shift'} (${formatTime12Hour(dayShift.start_time)} – ${formatTime12Hour(dayShift.end_time)})`; }
+      else if (defaultTmpl) { shiftLabel.textContent = 'Standard Shift'; shiftEl.textContent = `${defaultTmpl.shift_name || 'Shift'} (${formatTime12Hour(defaultTmpl.start_time)} – ${formatTime12Hour(defaultTmpl.end_time)})`; }
       else { shiftLabel.textContent = 'Shift'; shiftEl.textContent = 'No shift assigned'; }
 
       document.getElementById('calDayModalOverlay').classList.add('open');
@@ -1770,7 +1771,7 @@
     function renderDailyTaskItem(t, opts) {
       opts = opts || {};
       const badgeClass = DT_APPROVAL_BADGE[t.approval_status] || 'badge-pending-approval';
-      const timeBit = (t.start_time || t.completion_time) ? `${t.start_time || '—'} – ${t.completion_time || '—'}` : '';
+      const timeBit = (t.start_time || t.completion_time) ? `${t.start_time ? formatTime12Hour(t.start_time) : '—'} – ${t.completion_time ? formatTime12Hour(t.completion_time) : '—'}` : '';
       const canResubmit = !opts.readOnly && t.approval_status === 'Correction Required';
       const resubmitFn = opts.resubmitFn || 'prefillDtModalEdit';
       return `
