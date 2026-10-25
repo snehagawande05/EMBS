@@ -1248,10 +1248,27 @@
   <script>
     AppSession.protect();
 
+    // FIX: escape user-supplied text before putting it in innerHTML (XSS)
+    function esc(v) {
+      return String(v == null ? '' : v).replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    // FIX: only allow http(s) links (blocks javascript: URLs)
+    function safeUrl(u) {
+      const x = String(u || '').trim();
+      return /^https?:\/\//i.test(x) ? x : '#';
+    }
+
+    // FIX: employees must not run any of this page's code / API calls
+    const _role = localStorage.getItem('ebms_role');
+    const PAGE_BLOCKED = _role === 'employee';
+
     const PAGE_TOKEN = AppSession.getToken();
     const PAGE_USER = AppSession.getUser();
 
-    if (!PAGE_TOKEN || !PAGE_USER) {
+    if (PAGE_BLOCKED) {
+      window.location.href = 'employee_dashboard.html';
+    } else if (!PAGE_TOKEN || !PAGE_USER) {
       localStorage.clear();
       window.location.href = 'index.html';
     }
@@ -1287,6 +1304,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      if (PAGE_BLOCKED) return;
       document.getElementById('createTaskBtn').style.display = 'inline-flex';
       loadTasks();
     });
@@ -1331,7 +1349,8 @@
     }
 
     function renderBoard() {
-      const todo = ALL_TASKS.filter(t => t.status === 'todo' || (t.status === 'pending' && !t.assigned_to));
+      const KNOWN = ['todo', 'pending', 'in_progress', 'in_review', 'completed'];
+      const todo = ALL_TASKS.filter(t => t.status === 'todo' || (t.status === 'pending' && !t.assigned_to) || !KNOWN.includes(t.status));
       const prog = ALL_TASKS.filter(t => t.status === 'in_progress' || (t.status === 'pending' && t.assigned_to));
       const verify = ALL_TASKS.filter(t => t.status === 'in_review');
       const done = ALL_TASKS.filter(t => t.status === 'completed');
@@ -1373,22 +1392,21 @@
       }
     }
 
-    // Sheet booleans can arrive as true / "TRUE" / "FALSE" — "FALSE" is truthy in JS, so normalise.
-    function isDailyTask(t) {
-      const v = t && t.is_daily;
-      return v === true || ['true', 'yes', '1'].includes(String(v).trim().toLowerCase());
-    }
-
     function renderCard(t, colType) {
       const dueDate = fmtDate(t.due_date, { day: '2-digit', month: 'short', year: 'numeric' });
       const pClass = priorityClass[t.priority] || 'badge-low';
       const descHtml = t.description
-        ? `<div class="card-desc">${(t.description || '').slice(0, 80)}${t.description.length > 80 ? '…' : ''}</div>`
+        ? `<div class="card-desc">${esc((t.description || '').slice(0, 80))}${t.description.length > 80 ? '…' : ''}</div>`
         : '';
-      const dueHtml = `<span class="card-due">📅 ${dueDate || 'No due date'}</span>`;
+      const dueD = parseDateSafe(t.due_date);
+      const isOverdue = dueD && t.status !== 'completed' && dueD < new Date(new Date().setHours(0, 0, 0, 0));
+      const dueHtml = `<span class="card-due${isOverdue ? ' overdue' : ''}">📅 ${esc(dueDate) || 'No due date'}${isOverdue ? ' · Overdue' : ''}</span>`;
+      const tid = esc(t.task_id);
+      const rejBadge = (colType === 'prog' && t.submission_status === 'rejected')
+        ? `<span class="badge badge-rejected">✕ Rejected — resubmit</span>` : '';
       
       // Added visual badge for Daily Tasks
-      const dailyBadge = isDailyTask(t) 
+      const dailyBadge = t.is_daily 
         ? `<span class="badge badge-daily">🔄 Daily</span>` 
         : '';
 
@@ -1397,53 +1415,54 @@
 
       if (colType === 'todo') {
         actionsHtml = `
-          <button class="btn-card btn-assign" onclick="toggleAssignForm('${t.task_id}')">
+          <button class="btn-card btn-assign" onclick="toggleAssignForm('${tid}')">
             👤 Assign
           </button>
-          <div class="assign-inline" id="assignForm_${t.task_id}">
-            <select class="assign-select" id="assignEmp_${t.task_id}">
+          <div class="assign-inline" id="assignForm_${tid}">
+            <select class="assign-select" id="assignEmp_${tid}">
               <option value="">Select Employee</option>
             </select>
-            <button class="btn-card btn-assign" id="assignGo_${t.task_id}" onclick="doAssignTask('${t.task_id}')">→</button>
+            <button class="btn-card btn-assign" id="assignGo_${tid}" onclick="doAssignTask('${tid}')">→</button>
           </div>`;
       }
 
       if (colType === 'prog') {
         actionsHtml = `
-          <code style="font-size:10.5px;">👤 ${t.assigned_to || '—'}</code>
-          <button class="btn-card btn-revoke" onclick="doRevokeTask('${t.task_id}')">↩ Revoke</button>`;
+          <code style="font-size:10.5px;">👤 ${esc(t.assigned_to) || '—'}</code>
+          <button class="btn-card btn-revoke" onclick="doRevokeTask('${tid}')">↩ Revoke</button>`;
       }
 
       if (colType === 'verify') {
          const subDate = fmtDateTime(t.submission_date, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) || '—';
         extraHtml = `
           <div class="sub-preview">
-            🔗 <a href="${t.submission_link}" target="_blank" rel="noopener">${(t.submission_link || '').slice(0, 45)}${(t.submission_link || '').length > 45 ? '…' : ''}</a>
-            ${t.submission_note ? `<div class="sub-note">📝 ${t.submission_note.slice(0, 60)}${t.submission_note.length > 60 ? '…' : ''}</div>` : ''}
+            🔗 <a href="${esc(safeUrl(t.submission_link))}" target="_blank" rel="noopener noreferrer">${esc((t.submission_link || '').slice(0, 45))}${(t.submission_link || '').length > 45 ? '…' : ''}</a>
+            ${t.submission_note ? `<div class="sub-note">📝 ${esc(t.submission_note.slice(0, 60))}${t.submission_note.length > 60 ? '…' : ''}</div>` : ''}
             <div class="sub-note">🕐 ${subDate}</div>
           </div>`;
         actionsHtml = `
-          <code style="font-size:10.5px;">👤 ${t.assigned_to || '—'}</code>
-          <button class="btn-card btn-accept" onclick="openReviewModal('${t.task_id}')">✓ Accept</button>
-          <button class="btn-card btn-reject" onclick="openReviewModal('${t.task_id}')">✕ Reject</button>`;
+          <code style="font-size:10.5px;">👤 ${esc(t.assigned_to) || '—'}</code>
+          <button class="btn-card btn-accept" onclick="openReviewModal('${tid}')">✓ Accept</button>
+          <button class="btn-card btn-reject" onclick="openReviewModal('${tid}')">✕ Reject</button>`;
       }
 
       if (colType === 'done') {
          const reviewDate = fmtDate(t.review_date, { day: '2-digit', month: 'short', year: 'numeric' });
         extraHtml = `
           <div class="review-info">
-            <span>✓ Accepted</span>${t.reviewed_by ? ` by <code>${t.reviewed_by}</code>` : ''}${reviewDate ? ` · ${reviewDate}` : ''}
-            ${t.review_note ? `<div style="margin-top:3px;color:var(--text-dim);">${t.review_note.slice(0, 60)}${t.review_note.length > 60 ? '…' : ''}</div>` : ''}
+            <span>✓ Accepted</span>${t.reviewed_by ? ` by <code>${esc(t.reviewed_by)}</code>` : ''}${reviewDate ? ` · ${reviewDate}` : ''}
+            ${t.review_note ? `<div style="margin-top:3px;color:var(--text-dim);">${esc(t.review_note.slice(0, 60))}${t.review_note.length > 60 ? '…' : ''}</div>` : ''}
           </div>`;
       }
 
       return `
-        <div class="task-card" id="card_${t.task_id}">
-          <div class="card-title">${t.title}</div>
+        <div class="task-card" id="card_${tid}">
+          <div class="card-title">${esc(t.title)}</div>
           ${descHtml}
           <div class="card-meta">
             <span class="badge ${pClass}">${(t.priority || '').toUpperCase()}</span>
             ${dailyBadge}
+            ${rejBadge}
             ${dueHtml}
           </div>
           ${extraHtml}
@@ -1496,7 +1515,7 @@
         employees.map(emp => {
           const id = emp.emp_id || emp.employee_id || '';
           const name = emp.name || emp.full_name || id;
-          return `<option value="${id}">${name} (${id})</option>`;
+          return `<option value="${esc(id)}">${esc(name)} (${esc(id)})</option>`;
         }).join('');
       sel.disabled = false;
     }
@@ -1526,8 +1545,7 @@
         const out = await res.json();
         if (out.status === 'success') {
           showBoardLoading('Assigning task...');
-          await loadTasks();
-          hideBoardLoading();
+          try { await loadTasks(); } finally { hideBoardLoading(); }
           showToast('Task assigned successfully! ✓');
         } else {
           showToast(out.message || 'Error.');
@@ -1549,22 +1567,21 @@
         const out = await res.json();
         if (out.status === 'success') {
           showBoardLoading('Revoking assignment...');
-          await loadTasks();
-          hideBoardLoading();
+          try { await loadTasks(); } finally { hideBoardLoading(); }
           showToast('Task revoked successfully!');
         } else { showToast(out.message || 'Error.'); }
       } catch (e) { showToast('Network error.'); }
     }
 
     function openReviewModal(taskId) {
-      const t = ALL_TASKS.find(x => x.task_id === taskId);
+      const t = ALL_TASKS.find(x => String(x.task_id) === String(taskId));
       if (!t) return;
       activeReviewTaskId = taskId;
 
       document.getElementById('reviewTaskTitle').textContent = t.title;
       document.getElementById('reviewTaskMeta').textContent = `👤 ${t.assigned_to}  ·  🆔 ${t.task_id}`;
       const link = document.getElementById('reviewLink');
-      link.href = t.submission_link;
+      link.href = safeUrl(t.submission_link);
       link.textContent = t.submission_link;
 
       const noteWrap = document.getElementById('reviewNoteWrap');
@@ -1602,8 +1619,7 @@
         if (out.status === 'success') {
           closeReviewModal();
           showBoardLoading('Accepting submission...');
-          await loadTasks();
-          hideBoardLoading();
+          try { await loadTasks(); } finally { hideBoardLoading(); }
           showToast('Submission accepted! ✓');
         } else { showToast(out.message || 'Error.'); }
       } catch (e) { showToast('Network error.'); }
@@ -1629,8 +1645,7 @@
         if (out.status === 'success') {
           closeReviewModal();
           showBoardLoading('Rejecting submission...');
-          await loadTasks();
-          hideBoardLoading();
+          try { await loadTasks(); } finally { hideBoardLoading(); }
           showToast('Submission rejected.');
         } else { showToast(out.message || 'Error.'); }
       } catch (e) { showToast('Network error.'); }
@@ -1676,8 +1691,7 @@
         if (out.status === 'success') {
           closeCreateModal();
           showBoardLoading('Creating task...');
-          await loadTasks();
-          hideBoardLoading();
+          try { await loadTasks(); } finally { hideBoardLoading(); }
           showToast('Task created successfully! ✓');
         } else { showToast(out.message || 'Error.'); }
       } catch (e) { showToast('Network error.'); }
