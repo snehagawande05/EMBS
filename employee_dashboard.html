@@ -1145,17 +1145,35 @@
     });
     function getShiftRosterCached(fromDate, toDate) { return getShiftRosterCachedRaw(fromDate + '_' + toDate); }
 
-    const CAL_DEFAULT_SHIFT_START_MIN = 24 * 60;
-    const CAL_DEFAULT_SHIFT_END_MIN = 0;
+    const CAL_DEFAULT_SHIFT_START_MIN = 9 * 60;  // FIXED: 09:00 AM
+    const CAL_DEFAULT_SHIFT_END_MIN = 18 * 60;   // FIXED: 06:00 PM
     const CAL_GRACE_MIN = 15;
     const HALF_DAY_MIN = 6 * 60; // 6+ hours worked on a late/early day = Half Day
 
     function timeToMinutes(t) {
       if (!t) return null;
-      const str = String(t).trim();
-      if (str.includes('T')) { const p = str.split('T')[1].split(':'); return (+p[0] || 0) * 60 + (+p[1] || 0); }
-      if (str.includes(':')) { const p = str.split(':'); return (+p[0] || 0) * 60 + (+p[1] || 0); }
-      if (!isNaN(parseFloat(str))) return Math.round(parseFloat(str) * 24 * 60);
+      let str = String(t).trim().toUpperCase();
+      let isPM = str.includes('PM');
+      let isAM = str.includes('AM');
+      let cleanStr = str.replace(/AM|PM/g, '').trim();
+      
+      if (cleanStr.includes('T')) { 
+        cleanStr = cleanStr.split('T')[1]; 
+      }
+      if (cleanStr.includes(' ')) {
+        cleanStr = cleanStr.split(' ')[0]; 
+      }
+
+      const p = cleanStr.split(':');
+      if (p.length >= 2) {
+        let h = parseInt(p[0], 10) || 0;
+        let m = parseInt(p[1], 10) || 0;
+        if (isPM && h < 12) h += 12;
+        if (isAM && h === 12) h = 0;
+        return h * 60 + m;
+      }
+      const num = parseFloat(cleanStr);
+      if (!isNaN(num)) return Math.round(num * 24 * 60);
       return null;
     }
 
@@ -1167,7 +1185,8 @@
         const earlyOut = outMin !== null && outMin < shiftEndMin - CAL_GRACE_MIN;
         const missingPunch = (outMin === null && !isToday);
         if (lateIn || earlyOut) {
-          const worked = (inMin !== null && outMin !== null) ? outMin - inMin : 0;
+          let worked = (inMin !== null && outMin !== null) ? outMin - inMin : 0;
+          if (worked < 0) worked += 24 * 60; // Overnight shift fix
           return worked >= HALF_DAY_MIN ? 'halfday' : 'irregular';
         }
         return missingPunch ? 'irregular' : 'present';
@@ -1482,19 +1501,15 @@
     }
 
     function diffMinutes(inTime, outTime) {
-      const toMins = (t) => {
-        const str = String(t).trim();
-        if (str.includes('T')) { const p = str.split('T')[1].split(':'); return +p[0] * 60 + +p[1]; }
-        if (str.includes(':')) { const p = str.split(':'); return +p[0] * 60 + +p[1]; }
-        if (!isNaN(parseFloat(str))) return Math.round(parseFloat(str) * 24 * 60);
-        return 0;
-      };
-      const diff = toMins(outTime) - toMins(inTime);
-      return diff > 0 ? diff : 0;
+      const inMin = timeToMinutes(inTime);
+      const outMin = timeToMinutes(outTime);
+      if (inMin === null || outMin === null) return 0;
+      let diff = outMin - inMin;
+      if (diff < 0) diff += 24 * 60; // Overnight shift handle karne ke liye
+      return diff;
     }
 
     function formatDateYMD(d) {
-      // Uses local components — safe for any timezone
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
@@ -1957,7 +1972,6 @@
       const isRejected = t.submission_status === 'rejected';
       const id = t.task_id;
 
-      // Helper to format Date and Time
       const formatDateTime = (val) => {
         if (!val) return 'N/A';
         const d = parseDMY(val) || new Date(val);
@@ -2218,7 +2232,9 @@
       const tick = () => {
         const n = getISTDate();
         const nowSec = n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds();
-        el.textContent = formatHMS(Math.max(0, nowSec - inMin * 60));
+        let diffSec = nowSec - inMin * 60;
+        if (diffSec < 0) diffSec += 24 * 3600; // Overnight fix
+        el.textContent = formatHMS(Math.max(0, diffSec));
       };
       tick();
       _workTimerId = setInterval(tick, 1000);
@@ -2285,11 +2301,9 @@
     function parseHolidayDate(dateVal) {
         if (!dateVal) return null;
         let str = String(dateVal).trim();
-        // Try parsing DD/MM/YYYY or DD-MM-YYYY
         let m = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
         if (m) return new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
         
-        // Try parsing YYYY-MM-DD
         m = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
         if (m) return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
         
@@ -2311,7 +2325,6 @@
           return;
         }
         
-        // Sort by robust date parsing
         holidays.sort((a, b) => {
             const da = parseHolidayDate(a.date || a.holiday_date) || new Date(a.date);
             const db = parseHolidayDate(b.date || b.holiday_date) || new Date(b.date);
@@ -2324,9 +2337,8 @@
         
         holidays.forEach(h => {
           const dateVal = h.date || h.holiday_date;
-          if (!dateVal) return; // Skip invalid entries
+          if (!dateVal) return;
 
-          // Use robust date parsing to fix "Invalid Date"
           const d = parseHolidayDate(dateVal);
           if (!d || isNaN(d.getTime())) return;
 
