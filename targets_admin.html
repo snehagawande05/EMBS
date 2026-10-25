@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -506,6 +506,12 @@
       display: none;
     }
 
+    .tab-bar { display:flex; gap:6px; margin-bottom:20px; background:var(--glass); border:1px solid var(--glass-border); border-radius:12px; padding:4px; width:fit-content; max-width:100%; }
+    .tab-btn { background:none; border:none; color:var(--text-muted); font-family:'Inter',sans-serif; font-size:13.5px; font-weight:600; padding:9px 18px; border-radius:9px; cursor:pointer; transition:background .15s,color .15s; }
+    .tab-btn.active { background:var(--glass-strong); color:var(--text-primary); }
+    .count-pill { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14px; }
+    .count-pill small { color:var(--text-dim); font-weight:600; font-size:12px; }
+
     .hr-standalone-topbar {
       padding: 14px 24px;
       border-bottom: 1px solid var(--glass-border);
@@ -573,10 +579,10 @@
 
     <div class="header-block">
       <div class="title-area">
-        <h1>🎯 HR Targets</h1>
-        <p>Admins set monthly admission targets for each HR, tracking Assigned, Achieved, Remaining, and Progress percentage here.</p>
+        <h1>🎯 Targets</h1>
+        <p>Admins set monthly targets for HR users and for employees, tracking Assigned, Completed, Remaining, and Progress here.</p>
       </div>
-      <button class="btn-primary" id="assignTargetBtn" onclick="openAssignModal()">➕ Assign Target</button>
+      <button class="btn-primary" id="assignTargetBtn" onclick="onAssignClick()">➕ Assign Target</button>
     </div>
 
     <!-- Shown to HR viewers (read-only) — they see their own target(s) only -->
@@ -584,6 +590,13 @@
       👀 This is your personal monthly target (read-only). Only the admin can assign or edit a new target.
     </div>
 
+    <!-- Tabs (admin only) -->
+    <div class="tab-bar" id="tabBar" style="display:none;">
+      <button class="tab-btn active" id="tabBtnHr" onclick="switchTab('hr')">👤 HR Targets</button>
+      <button class="tab-btn" id="tabBtnEmp" onclick="switchTab('emp')">👥 Employee Targets</button>
+    </div>
+
+    <div id="hrPane">
     <!-- Stats -->
     <div class="stats-row">
       <div class="stat-card">
@@ -649,6 +662,103 @@
           </tr>
         </tbody>
       </table>
+    </div>
+    </div><!-- /hrPane -->
+
+    <!-- ═════════ EMPLOYEE TARGETS (admin only) ═════════ -->
+    <div id="empPane" style="display:none;">
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Total Targets</div>
+          <div class="stat-value" id="eStatTotal">—</div>
+          <div class="stat-sub">In this view</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Assigned</div>
+          <div class="stat-value" id="eStatAssigned" style="color:var(--info);">—</div>
+          <div class="stat-sub">Total targets given</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Completed</div>
+          <div class="stat-value" id="eStatCompleted" style="color:var(--success);">—</div>
+          <div class="stat-sub">Out of assigned</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Completion</div>
+          <div class="stat-value" id="eStatProgress" style="color:var(--warning);">—</div>
+          <div class="stat-sub">Completed ÷ Assigned</div>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <select id="eFilterEmp" onchange="loadEmpTargets()">
+          <option value="">All Employees</option>
+        </select>
+        <select id="eFilterMonth" onchange="loadEmpTargets()"></select>
+        <select id="eFilterYear" onchange="loadEmpTargets()"></select>
+        <select id="eFilterStatus" onchange="loadEmpTargets()">
+          <option value="active" selected>Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="">All</option>
+        </select>
+        <button class="btn-refresh" onclick="loadEmpTargets()">🔄 Refresh</button>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Month / Year</th>
+              <th>Completed / Assigned</th>
+              <th>Remaining</th>
+              <th>Progress</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="empTargetsRows">
+            <tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🎯</div><p>Targets are loading...</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Employee Target Modal (Admin only) -->
+  <div class="modal-overlay" id="empTargetModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="empModalTitle">➕ Assign Target to Employee</h3>
+        <button class="modal-close-btn" onclick="closeEmpModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" id="efgEmp">
+          <label>Employee</label>
+          <select id="emEmp"></select>
+          <div class="form-hint">Only active employees are listed.</div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div class="form-group" style="flex:1;"><label>Month</label><select id="emMonth"></select></div>
+          <div class="form-group" style="flex:1;"><label>Year</label><select id="emYear"></select></div>
+        </div>
+        <div class="form-group">
+          <label>Number of Targets Assigned</label>
+          <input type="number" id="emAssigned" min="1" placeholder="e.g. 3" />
+          <div class="form-hint">Example: assign 3 → employee's dashboard will show "completed / 3" (e.g. 2/3).</div>
+        </div>
+        <div class="form-group" id="efgStatus" style="display:none;">
+          <label>Status</label>
+          <select id="emStatus">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" onclick="closeEmpModal()">Cancel</button>
+          <button class="btn-save" id="emSaveBtn" onclick="submitEmpModal()">Assign</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -723,6 +833,207 @@
         document.getElementById('actionsHeader').style.display = 'none';
       } else {
         document.getElementById('filterHr').style.display = 'inline-block';
+        document.getElementById('tabBar').style.display = 'flex';
+      }
+    }
+
+    // ══════════ TABS ══════════
+    let ACTIVE_TAB = 'hr';
+    function switchTab(tab) {
+      if (!IS_ADMIN) return;
+      ACTIVE_TAB = tab;
+      document.getElementById('hrPane').style.display = tab === 'hr' ? '' : 'none';
+      document.getElementById('empPane').style.display = tab === 'emp' ? '' : 'none';
+      document.getElementById('tabBtnHr').classList.toggle('active', tab === 'hr');
+      document.getElementById('tabBtnEmp').classList.toggle('active', tab === 'emp');
+      document.getElementById('assignTargetBtn').textContent = tab === 'hr' ? '➕ Assign Target to HR' : '➕ Assign Target to Employee';
+      if (tab === 'emp' && !EMP_TAB_LOADED) { EMP_TAB_LOADED = true; loadEmployeeList().then(loadEmpTargets); }
+    }
+    function onAssignClick() { ACTIVE_TAB === 'emp' ? openEmpAssignModal() : openAssignModal(); }
+
+    // ══════════ EMPLOYEE TARGETS ══════════
+    let EMP_TAB_LOADED = false;
+    let allEmpTargets = [];
+    let empNameMap = {};
+    let editingEmpTargetId = null;
+
+    function escHtml(v) {
+      return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function fillEmpMonthYear() {
+      const now = new Date(), curMonth = now.getMonth() + 1, curYear = now.getFullYear();
+      const mOpts = MONTH_NAMES.map((m, i) => `<option value="${i + 1}" ${i + 1 === curMonth ? 'selected' : ''}>${m}</option>`).join('');
+      let yOpts = '';
+      for (let y = curYear - 1; y <= curYear + 1; y++) yOpts += `<option value="${y}" ${y === curYear ? 'selected' : ''}>${y}</option>`;
+      document.getElementById('eFilterMonth').innerHTML = '<option value="">All Months</option>' + mOpts;
+      document.getElementById('eFilterYear').innerHTML = yOpts;
+      document.getElementById('emMonth').innerHTML = mOpts;
+      document.getElementById('emYear').innerHTML = yOpts;
+    }
+
+    async function loadEmployeeList() {
+      fillEmpMonthYear();
+      try {
+        const res = await fetch(`${API_URL}?action=getEmployees&token=${TOKEN}&limit=500&status=active`, { cache: 'no-store' });
+        const payload = await res.json();
+        if (payload.status === 'success') {
+          const arr = (payload.data && payload.data.data) || payload.data || [];
+          const f = document.getElementById('eFilterEmp'), m = document.getElementById('emEmp');
+          m.innerHTML = '<option value="">Select employee…</option>';
+          arr.forEach(e => {
+            if (!e.emp_id) return;
+            empNameMap[e.emp_id] = e.name || e.email || e.emp_id;
+            const label = `${e.name || e.email || e.emp_id} (${e.emp_id})`;
+            f.insertAdjacentHTML('beforeend', `<option value="${escHtml(e.emp_id)}">${escHtml(label)}</option>`);
+            m.insertAdjacentHTML('beforeend', `<option value="${escHtml(e.emp_id)}">${escHtml(label)}</option>`);
+          });
+        }
+      } catch (e) { /* names fall back to emp_id */ }
+    }
+
+    async function loadEmpTargets() {
+      const tbody = document.getElementById('empTargetsRows');
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">⏳</div><p>Loading targets...</p></div></td></tr>`;
+      const empId = document.getElementById('eFilterEmp').value;
+      const month = document.getElementById('eFilterMonth').value;
+      const year = document.getElementById('eFilterYear').value;
+      const status = document.getElementById('eFilterStatus').value;
+      let url = `${API_URL}?action=getEmployeeTargets&token=${TOKEN}&limit=500&_ts=${Date.now()}`;
+      if (empId) url += `&emp_id=${encodeURIComponent(empId)}`;
+      if (month) url += `&month=${month}`;
+      if (year) url += `&year=${year}`;
+      if (status) url += `&status=${status}`;
+      try {
+        const res = await fetch(url, { cache: 'no-store' });
+        const payload = await res.json();
+        if (payload.status === 'success') {
+          allEmpTargets = (payload.data && payload.data.data) || payload.data || [];
+          updateEmpStats(allEmpTargets);
+          renderEmpRows(allEmpTargets);
+        } else {
+          tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">⚠️</div><p>${escHtml(payload.message || 'Could not load employee targets.')}</p></div></td></tr>`;
+          showToast(payload.message || 'Error occurred while fetching employee targets.');
+        }
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">⚠️</div><p>Network error — could not load.</p></div></td></tr>`;
+      }
+    }
+
+    function updateEmpStats(data) {
+      const a = data.reduce((s, t) => s + (parseFloat(t.assigned_target) || 0), 0);
+      const c = data.reduce((s, t) => s + (parseFloat(t.achieved_target) || 0), 0);
+      document.getElementById('eStatTotal').textContent = data.length;
+      document.getElementById('eStatAssigned').textContent = a;
+      document.getElementById('eStatCompleted').textContent = c;
+      document.getElementById('eStatProgress').textContent = (a ? Math.round(Math.min(100, (c / a) * 100)) : 0) + '%';
+    }
+
+    function renderEmpRows(data) {
+      const tbody = document.getElementById('empTargetsRows');
+      if (!data || !data.length) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📭</div><p>No employee targets found for this filter.</p></div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = data.map(t => {
+        const assigned = parseInt(t.assigned_target, 10) || 0;
+        const done = parseInt(t.achieved_target, 10) || 0;
+        const remaining = Math.max(assigned - done, 0);
+        const pct = assigned ? Math.min(100, Math.round((done / assigned) * 100)) : 0;
+        const name = empNameMap[t.emp_id] || t.emp_name || t.name || t.emp_id || '—';
+        const inactive = t.status === 'inactive';
+        return `
+        <tr>
+          <td>
+            <div style="font-weight:600; color:var(--text-primary); font-size:13.5px;">${escHtml(name)}</div>
+            <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">${escHtml(t.emp_id)}</div>
+          </td>
+          <td style="font-size:13px;">${MONTH_NAMES[(parseInt(t.target_month, 10) || 1) - 1]} ${escHtml(t.target_year)}</td>
+          <td><span class="count-pill" style="color:var(--success);">${done}<small> / ${assigned}</small></span></td>
+          <td style="color:var(--text-muted);">${remaining}</td>
+          <td>
+            <div class="progress-wrap">
+              <div class="progress-track"><div class="progress-fill" style="width:${pct}%;"></div></div>
+              <div class="progress-label">${pct}%</div>
+            </div>
+          </td>
+          <td><span class="badge ${inactive ? 'badge-inactive' : 'badge-active'}">${inactive ? 'Inactive' : 'Active'}</span></td>
+          <td><button class="btn-edit" onclick="openEmpEditModal('${escHtml(t.target_id)}')">✏️ Edit</button></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function openEmpAssignModal() {
+      if (!IS_ADMIN) return;
+      editingEmpTargetId = null;
+      document.getElementById('empModalTitle').textContent = '➕ Assign Target to Employee';
+      document.getElementById('efgEmp').style.display = 'flex';
+      document.getElementById('efgStatus').style.display = 'none';
+      document.getElementById('emEmp').value = '';
+      document.getElementById('emMonth').disabled = false;
+      document.getElementById('emYear').disabled = false;
+      document.getElementById('emAssigned').value = '';
+      document.getElementById('emSaveBtn').textContent = 'Assign';
+      document.getElementById('empTargetModal').classList.add('open');
+    }
+
+    function openEmpEditModal(targetId) {
+      if (!IS_ADMIN) return;
+      const t = allEmpTargets.find(x => String(x.target_id) === String(targetId));
+      if (!t) return;
+      editingEmpTargetId = t.target_id;
+      document.getElementById('empModalTitle').textContent = '✏️ Edit Employee Target — ' + (empNameMap[t.emp_id] || t.emp_id);
+      document.getElementById('efgEmp').style.display = 'none';
+      document.getElementById('efgStatus').style.display = 'flex';
+      document.getElementById('emMonth').value = t.target_month;
+      document.getElementById('emMonth').disabled = true;
+      document.getElementById('emYear').value = t.target_year;
+      document.getElementById('emYear').disabled = true;
+      document.getElementById('emAssigned').value = t.assigned_target;
+      document.getElementById('emStatus').value = t.status || 'active';
+      document.getElementById('emSaveBtn').textContent = 'Save Changes';
+      document.getElementById('empTargetModal').classList.add('open');
+    }
+
+    function closeEmpModal() {
+      document.getElementById('empTargetModal').classList.remove('open');
+      editingEmpTargetId = null;
+    }
+
+    async function submitEmpModal() {
+      const btn = document.getElementById('emSaveBtn');
+      const assigned = document.getElementById('emAssigned').value;
+      if (assigned === '' || isNaN(assigned) || parseInt(assigned, 10) < 1) { showToast('Enter how many targets to assign (1 or more).'); return; }
+      let payload;
+      if (editingEmpTargetId) {
+        payload = { token: TOKEN, action: 'updateTarget', target_id: editingEmpTargetId, assigned_target: assigned, status: document.getElementById('emStatus').value };
+      } else {
+        const empId = document.getElementById('emEmp').value;
+        if (!empId) { showToast('Please select an employee.'); return; }
+        payload = {
+          token: TOKEN, action: 'assignTarget', emp_id: empId,
+          target_type: 'admission',
+          target_month: document.getElementById('emMonth').value,
+          target_year: document.getElementById('emYear').value,
+          assigned_target: assigned
+        };
+      }
+      btn.disabled = true;
+      const original = btn.textContent; btn.textContent = 'Saving…';
+      try {
+        const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+        const out = await res.json();
+        if (out.status === 'success') {
+          showToast(out.message || 'Target saved.');
+          closeEmpModal();
+          loadEmpTargets();
+        } else {
+          showToast(out.message || 'Could not save the target.');
+        }
+      } catch (e) {
+        showToast('Network error while saving the target.');
+      } finally {
+        btn.disabled = false; btn.textContent = original;
       }
     }
 

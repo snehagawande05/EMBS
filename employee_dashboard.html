@@ -2084,13 +2084,13 @@
       try {
         const res = await fetch(`${API_URL}?action=getEmployeeTargets&token=${TOKEN}&limit=50&_ts=${Date.now()}`, { cache: 'no-store' });
         const payload = await res.json();
-        if (payload.status !== 'success') { showToast(payload.message || 'Target did not load.'); return; }
+        if (payload.status !== 'success') { emptyState.style.display = 'block'; showToast(payload.message || 'Target did not load.'); return; }
         MY_TARGETS = (payload.data && payload.data.data) || [];
         if (MY_TARGETS.length === 0) { emptyState.style.display = 'block'; return; }
         MY_TARGETS.sort((a, b) => (b.target_year - a.target_year) || (b.target_month - a.target_month));
         const select = document.getElementById('targetPeriodSelect');
         select.innerHTML = MY_TARGETS.map((t, i) => {
-          const label = `${TARGET_MONTH_NAMES[parseInt(t.target_month, 10) - 1] || t.target_month} ${t.target_year} — ${t.target_type}`;
+          const label = `${TARGET_MONTH_NAMES[parseInt(t.target_month, 10) - 1] || t.target_month} ${t.target_year}${t.target_type ? ' — ' + t.target_type : ''}`;
           return `<option value="${i}">${label}</option>`;
         }).join('');
         if (MY_TARGETS.length > 1) selectorWrap.style.display = 'block';
@@ -2109,7 +2109,8 @@
       document.getElementById('tgProgress').textContent = t.progress_percent + '%';
       document.getElementById('tgProgressBar').style.width = Math.min(parseFloat(t.progress_percent) || 0, 100) + '%';
       const monthLabel = TARGET_MONTH_NAMES[parseInt(t.target_month, 10) - 1] || t.target_month;
-      document.getElementById('tgTypeLabel').textContent = `${t.target_type.charAt(0).toUpperCase() + t.target_type.slice(1)} target for ${monthLabel} ${t.target_year}`;
+      const tType = t.target_type || 'admission';
+      document.getElementById('tgTypeLabel').textContent = `${tType.charAt(0).toUpperCase() + tType.slice(1)} target for ${monthLabel} ${t.target_year} — ${t.achieved_target}/${t.assigned_target} completed`;
     }
 
     function calcLeaveDays(fromStr, toStr) {
@@ -2231,7 +2232,7 @@
       try {
         const res = await fetch(`${API_URL}?action=getEmployeeTargets&token=${TOKEN}&limit=50&_ts=${Date.now()}`, { cache: 'no-store' });
         const payload = await res.json();
-        if (payload.status !== 'success') { subEl.textContent = 'Could not load'; return; }
+        if (payload.status !== 'success') { console.warn('[TARGET]', payload.message); subEl.textContent = payload.message ? ('Could not load: ' + payload.message) : 'Could not load'; return; }
         const list = (payload.data && payload.data.data) || [];
         if (!list.length) { mainEl.textContent = '—'; subEl.textContent = 'No target assigned'; return; }
         const m = _istNow.getMonth() + 1, y = _istNow.getFullYear();
@@ -2240,7 +2241,8 @@
         const assigned = parseInt(t.assigned_target, 10) || 0;
         const achieved = parseInt(t.achieved_target, 10) || 0;
         mainEl.textContent = `${achieved}/${assigned}`;
-        subEl.textContent = `${t.target_type || 'Admission'} target`;
+        const remainingT = Math.max(assigned - achieved, 0);
+        subEl.textContent = `${achieved} of ${assigned} completed` + (remainingT ? ` · ${remainingT} left` : ' 🎉');
         barEl.style.width = (assigned ? Math.min(100, (achieved / assigned) * 100) : 0) + '%';
       } catch (e) { subEl.textContent = 'Network error'; }
     }
