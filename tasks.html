@@ -1373,6 +1373,12 @@
       }
     }
 
+    // Sheet booleans can arrive as true / "TRUE" / "FALSE" — "FALSE" is truthy in JS, so normalise.
+    function isDailyTask(t) {
+      const v = t && t.is_daily;
+      return v === true || ['true', 'yes', '1'].includes(String(v).trim().toLowerCase());
+    }
+
     function renderCard(t, colType) {
       const dueDate = fmtDate(t.due_date, { day: '2-digit', month: 'short', year: 'numeric' });
       const pClass = priorityClass[t.priority] || 'badge-low';
@@ -1382,7 +1388,7 @@
       const dueHtml = `<span class="card-due">📅 ${dueDate || 'No due date'}</span>`;
       
       // Added visual badge for Daily Tasks
-      const dailyBadge = t.is_daily 
+      const dailyBadge = isDailyTask(t) 
         ? `<span class="badge badge-daily">🔄 Daily</span>` 
         : '';
 

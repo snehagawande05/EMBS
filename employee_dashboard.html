@@ -597,7 +597,7 @@
 
     <!-- NEW Daily Tasks Section -->
     <div class="tasks-section" id="dailyTasksSection" style="display: none; margin-bottom: 22px;">
-      <div class="section-label">🔄 Assigned Daily Tasks</div>
+      <div class="section-label">🔄 Today's Daily Tasks</div>
       <div id="dailyTasksListContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
     </div>
 
@@ -1203,7 +1203,8 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       if (!USER || !USER.employee_id) { window.location.href = 'index.html'; return; }
-      loadProfile().then(loadShiftAndAttendanceStats);
+      PROFILE_READY = loadProfile();
+      PROFILE_READY.then(loadShiftAndAttendanceStats);
       loadCalendar();
       loadTasks();
       loadMyLeaves();
@@ -1211,6 +1212,8 @@
       loadTargetStat();
       initOnboardingInstructions();
     });
+
+    let PROFILE_READY = Promise.resolve();
 
     function toggleMobileActions() { document.getElementById('mobileActionsSheet').classList.toggle('open'); }
     function doLogout() {
@@ -1895,7 +1898,7 @@
       try {
         const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
         const out = await res.json();
-        if (out.status === 'success') { showToast(out.message || 'Daily task saved.'); toggleDtModalAddForm(false); loadMyDailyTasksList(); }
+        if (out.status === 'success') { showToast(out.message || 'Daily task saved.'); toggleDtModalAddForm(false); loadMyDailyTasksList(); loadTasks(); }
         else showToast(out.message || 'Could not save the task.');
       } catch (e) { showToast('Network error while saving the task.'); }
       finally { btn.disabled = false; btn.textContent = originalLabel; }
@@ -1963,7 +1966,7 @@
 
         arr.forEach(t => {
           TASK_CACHE[t.task_id] = t;
-          if (t.is_daily) {
+          if (isDailyTask(t)) {
             dailyTasks.push(t);
           } else {
             kanbanTasks.push(t);
@@ -1971,7 +1974,7 @@
         });
 
         // Render Daily Tasks Section
-        renderDailyTasksSection(dailyTasks);
+        renderDailyTasksSection(dailyTasks).catch(e => console.error('daily section:', e));
 
         // Render Kanban Tasks
         const cols = { assigned: [], progress: [], review: [], done: [] };
@@ -1987,152 +1990,96 @@
       } catch (e) { showToast('Could not load tasks.'); }
     }
 
-    function renderDailyTasksSection(tasks) {
+    // Sheet booleans can arrive as true / "TRUE" / "true" / "FALSE" — normalise them.
+    function isDailyTask(t) {
+      const v = t && t.is_daily;
+      return v === true || ['true', 'yes', '1'].includes(String(v).trim().toLowerCase());
+    }
+
+    // Returns a reason string if today is an off day for this employee, else ''.
+    async function getTodayOffReason() {
+      const weekdayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const todayKey = formatDateYMD(new Date());
+      const year = TODAY.getFullYear();
+
+      const weeklyOff = ((EMPLOYEE_DATA && EMPLOYEE_DATA.weekly_off) || '').trim().toLowerCase();
+      if (weeklyOff && weekdayNames[TODAY.getDay()].toLowerCase() === weeklyOff) return 'Weekly Off';
+
+      const localName = (PUBLIC_HOLIDAYS[year] || {})[todayKey];
+      if (localName) return localName;
+      try {
+        const backend = await getHolidaysCached(year);
+        const hit = (Array.isArray(backend) ? backend : []).find(h => toISTDateStr(h.date) === todayKey);
+        if (hit) return hit.name || hit.holiday_name || 'Holiday';
+      } catch (e) { /* ignore */ }
+
+      try {
+        const leaves = await getApprovedLeavesCached();
+        const onLeave = (Array.isArray(leaves) ? leaves : []).some(l => {
+          const f = new Date(l.from_date), t = new Date(l.to_date);
+          f.setHours(0, 0, 0, 0); t.setHours(0, 0, 0, 0);
+          return f <= TODAY && TODAY <= t;
+        });
+        if (onLeave) return 'Approved Leave';
+      } catch (e) { /* ignore */ }
+      return '';
+    }
+
+    // Titles the employee already logged today in the Daily Tasks module (rejected ones don't count).
+    async function getLoggedDailyTitlesToday() {
+      const set = new Set();
+      try {
+        const res = await fetch(`${API_URL}?action=getDailyTasks&token=${TOKEN}&date=${formatDateYMD(new Date())}&_ts=${Date.now()}`, { cache: 'no-store' });
+        const payload = await res.json();
+        if (payload.status === 'success') {
+          ((payload.data && payload.data.data) || []).forEach(x => {
+            if (x.approval_status !== 'Rejected') set.add(String(x.task_title || '').trim().toLowerCase());
+          });
+        }
+      } catch (e) { /* ignore */ }
+      return set;
+    }
+
+    async function renderDailyTasksSection(tasks) {
       const section = document.getElementById('dailyTasksSection');
       const container = document.getElementById('dailyTasksListContainer');
-      if (!tasks || tasks.length === 0) {
-        section.style.display = 'none';
-        return;
-      }
+      if (!tasks || tasks.length === 0) { section.style.display = 'none'; return; }
 
-      tasks.sort((a, b) => {
-        const aDone = a.status === 'completed' ? 1 : 0;
-        const bDone = b.status === 'completed' ? 1 : 0;
-        if (aDone !== bDone) return aDone - bDone;
-        return (parseDMY(a.due_date) || 0) - (parseDMY(b.due_date) || 0);
-      });
+      await PROFILE_READY;                      // weekly_off must be loaded first
+      const offReason = await getTodayOffReason();
+      if (offReason) { section.style.display = 'none'; return; }   // off day: no daily tasks
+
+      const logged = await getLoggedDailyTitlesToday();
+      const isLogged = t => logged.has(String(t.title || '').trim().toLowerCase());
+      tasks.sort((a, b) => (isLogged(a) ? 1 : 0) - (isLogged(b) ? 1 : 0));
 
       section.style.display = 'block';
       container.innerHTML = tasks.map(t => {
-        const isCompleted = t.status === 'completed';
-        const dueD = parseDMY(t.due_date);
-        const dueText = formatTaskDate(t.due_date);
-        const isOverdue = dueD && dueD < TODAY && !isCompleted;
-
+        const done = isLogged(t);
         return `
-          <div class="glass-card task-card" style="margin-bottom: 10px; border-left: 3px solid ${isCompleted ? 'var(--success)' : 'var(--indigo)'};">
+          <div class="glass-card task-card" style="border-left: 3px solid ${done ? 'var(--success)' : 'var(--indigo)'};">
             <div class="task-top">
               <div class="task-title">${escapeHtml(t.title || '')} <span class="badge badge-daily">🔄 Daily</span></div>
               <span class="badge ${priorityClass[t.priority] || 'badge-low'}">${(t.priority || '').toUpperCase()}</span>
             </div>
             ${t.description ? `<div style="font-size:11.5px;color:var(--text-dim);margin:4px 0;">${escapeHtml(t.description)}</div>` : ''}
-            <div class="task-due" ${isOverdue ? 'style="color:var(--danger);"' : ''}>
-              📅 Due: ${dueText || 'No due date'} ${isOverdue ? '⚠️' : ''}
-            </div>
-            ${t.submission_link && t.submission_link !== 'N/A' ? `
-              <div class="task-sub-box" style="margin-top:8px;">
-                🔗 <a href="${escapeHtml(t.submission_link)}" target="_blank" rel="noopener">View submitted work</a>
-                ${t.submission_note ? `<div style="margin-top:4px;">📝 ${escapeHtml(t.submission_note)}</div>` : ''}
-              </div>
-            ` : ''}
-            <div class="task-footer" style="display:flex; align-items:center; justify-content:space-between; margin-top:10px;">
-              <div style="display:flex; gap:8px;">
-                ${isCompleted 
-                  ? `<span style="color:var(--success);font-size:12px;font-weight:600;display:flex;align-items:center;">✓ Completed</span>` 
-                  : `<button class="btn-done" onclick="completeMyTask('${t.task_id}')">✓ Done</button>`
-                }
-                <button class="btn-done" style="background:rgba(251,191,36,0.12); color:#FCD34D; border-color:rgba(251,191,36,0.25);" onclick="openSubmitModal('${t.task_id}', 'edit')">✏️ Edit</button>
-              </div>
+            <div class="task-footer" style="margin-top:10px;">
+              ${done
+                ? `<span style="color:var(--success);font-size:12px;font-weight:600;">✓ Logged today</span>`
+                : `<button class="btn-done" onclick="logDailyTask('${t.task_id}')">📝 Log today's work</button>`}
             </div>
           </div>`;
       }).join('');
     }
 
-    function renderTaskCard(t) {
-      const col = getTaskColumn(t);
-      const dueD = parseDMY(t.due_date);
-      const dueText = formatTaskDate(t.due_date);
-      const isOverdue = dueD && dueD < TODAY && col !== 'done';
-      const isRejected = t.submission_status === 'rejected';
-      const id = t.task_id;
-
-      const formatDateTime = (val) => {
-        if (!val) return 'N/A';
-        const d = parseDMY(val) || new Date(val);
-        if (isNaN(d.getTime())) return String(val); 
-        if (String(val).includes(':') || String(val).includes('T')) {
-            return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' +
-                   d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-        }
-        return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-      };
-
-      const subBox = (t.submission_link && (col === 'review' || col === 'done'))
-        ? `<div class="task-sub-box">🔗 <a href="${escapeHtml(t.submission_link)}" target="_blank" rel="noopener">View submitted work</a>${t.submission_note ? `<div style="margin-top:4px;">📝 ${escapeHtml(t.submission_note)}</div>` : ''}</div>` : '';
-
-      let dateLine = '';
-      if (col === 'assigned') {
-        const assignD = t.assigned_at || t.created_at || t.assigned_date || t.date;
-        const assignText = assignD ? formatDateTime(assignD) : 'N/A';
-        dateLine = `<div class="task-due" ${isOverdue ? 'style="color:var(--danger);"' : ''}>📅 Assigned: ${assignText} <br> ⏰ Due: ${dueText}${isOverdue ? ' ⚠️' : ''}</div>`;
-      } else if (col === 'progress') {
-        const startD = t.started_at || t.start_date || t.updated_at || getStartedTasks()[t.task_id];
-        const startText = startD ? formatDateTime(startD) : 'N/A';
-        dateLine = `<div class="task-due" ${isOverdue ? 'style="color:var(--danger);"' : ''}>▶ Started: ${startText} ${isOverdue ? '⚠️' : ''}</div>`;
-      } else if (col === 'review') {
-        const subD = t.submitted_at || t.submission_date || t.updated_at;
-        const subText = subD ? formatDateTime(subD) : 'N/A';
-        dateLine = `<div class="task-due">📤 Submitted: ${subText}</div>`;
-      } else if (col === 'done') {
-        const doneD = t.completed_at || t.completed_date || t.approved_at || t.approval_date || t.updated_at || t.submitted_at || t.submission_date;
-        const doneText = doneD ? formatDateTime(doneD) : 'N/A';
-        dateLine = `<div class="task-due" style="color:var(--success);">✓ Done: ${doneText}</div>`;
-      }
-
-      let footerAction = '';
-      if (col === 'done') {
-        footerAction = `<span style="color:var(--success);font-size:12px;font-weight:600;">✓ Accepted</span>`;
-      } else if (col === 'review') {
-        footerAction = `<span style="color:#FCD34D;font-size:12px;font-weight:600; margin-right:8px;">⏳ Under Review</span>
-                        <button class="btn-done" onclick="openSubmitModal('${id}', 'edit')">✏️ Edit</button>`;
-      } else if (col === 'progress') {
-        footerAction = `<button class="btn-done" onclick="openSubmitModal('${id}', 'submit')">${isRejected ? 'Re-Submit 📤' : 'Submit Work 📤'}</button>`;
-      } else {
-        footerAction = `<button class="btn-done" onclick="startTask('${id}')">▶ Start Work</button>`;
-      }
-
-      const rejectBox = (col === 'progress' && isRejected) ? `<div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.22);border-radius:8px;padding:8px 10px;font-size:11.5px;color:#F87171;margin:6px 0;">✕ Rejected: ${escapeHtml(t.review_note || 'Reason not given')}</div>` : '';
-
-      return `
-        <div class="glass-card task-card">
-          <div class="task-top">
-            <div class="task-title">${escapeHtml(t.title || '')}</div>
-            <span class="badge ${priorityClass[t.priority] || 'badge-low'}">${(t.priority || '').toUpperCase()}</span>
-          </div>
-          ${t.description ? `<div style="font-size:11.5px;color:var(--text-dim);margin:4px 0;">${escapeHtml(t.description.slice(0, 80))}${t.description.length > 80 ? '…' : ''}</div>` : ''}
-          ${dateLine}
-          ${rejectBox}${subBox}
-          <div class="task-footer" style="display:flex; align-items:center; justify-content:space-between;">${footerAction}</div>
-        </div>`;
-    }
-
-    function openSubmitModal(taskId, mode) {
-      const t = TASK_CACHE[taskId] || {};
-      const isEdit = mode === 'edit';
-      _submitWorkTaskId = taskId;
-      _submitWorkMode = isEdit ? 'edit' : 'submit';
-      document.getElementById('submitWorkTaskTitle').textContent = t.title || '';
-      document.getElementById('submitWorkTaskId').textContent = '🆔 ' + taskId;
-      document.getElementById('submitWorkLink').value = isEdit ? (t.submission_link || '') : '';
-      document.getElementById('submitWorkNote').value = isEdit ? (t.submission_note || '') : '';
-      document.getElementById('submitWorkBtn').textContent = isEdit ? 'Update Work ✏️' : 'Submit Work 📤';
-      document.getElementById('submitWorkModal').classList.add('open');
-    }
-    function closeSubmitModal() { document.getElementById('submitWorkModal').classList.remove('open'); _submitWorkTaskId = null; }
-
-    async function doSubmitWork() {
-      const link = document.getElementById('submitWorkLink').value.trim();
-      if (!link) { showToast('Please enter the drive link!'); return; }
-      const btn = document.getElementById('submitWorkBtn');
-      const idleLabel = _submitWorkMode === 'edit' ? 'Update Work ✏️' : 'Submit Work 📤';
-      btn.disabled = true; btn.textContent = 'Submitting...';
-      try {
-        const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ token: TOKEN, action: 'submitTask', task_id: _submitWorkTaskId, submission_link: link, submission_note: document.getElementById('submitWorkNote').value.trim() }) });
-        const out = await res.json();
-        if (out.status === 'success') { showToast(_submitWorkMode === 'edit' ? 'Work updated! ✓' : 'Work submitted! ✓'); closeSubmitModal(); loadTasks(); }
-        else showToast(out.message || 'Error.');
-      } catch (e) { showToast('Network error.'); }
-      finally { btn.disabled = false; btn.textContent = idleLabel; }
+    // Opens the Daily Tasks form with today's date and this task's title pre-filled.
+    function logDailyTask(taskId) {
+      const t = TASK_CACHE[taskId];
+      if (!t) return;
+      openDailyTasksModal();
+      toggleDtModalAddForm();
+      document.getElementById('dtmTaskTitle').value = t.title || '';
+      document.getElementById('dtmTaskDescription').value = t.description || '';
     }
 
     async function completeMyTask(taskId) {
