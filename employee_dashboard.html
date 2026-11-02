@@ -196,7 +196,18 @@
       padding: 0 2px;
       letter-spacing: 0.1px;
     }
-    @media (max-width: 600px) { .cal-holiday-name { font-size: 7px; } .cal-day-num { font-size: 11px; } }
+
+    /* Fixed Mobile Calendar */
+    @media (max-width: 600px) { 
+      .cal-cell { 
+        aspect-ratio: auto; 
+        min-height: 60px; 
+        padding: 6px 2px; 
+        justify-content: flex-start; 
+      } 
+      .cal-holiday-name { font-size: 7.5px; line-height: 1.1; } 
+      .cal-day-num { font-size: 12px; margin-bottom: 2px; } 
+    }
 
     .cal-present { background: rgba(52,211,153,0.16); color: #6EE7B7; border-color: rgba(52,211,153,0.25); }
     .cal-irregular { background: rgba(168,85,247,0.18); color: #C084FC; border-color: rgba(168,85,247,0.3); }
@@ -2012,19 +2023,24 @@
         }
       }
 
-      // Format Start Time
+      // Format Start Time (Check Backend & LocalStorage)
       let startTimeStr = '—';
-      const startTimeRaw = startedTasks[taskIdStr];
+      const startTimeRaw = t.started_at || t.start_time || startedTasks[taskIdStr];
       if (startTimeRaw) {
         const d = new Date(startTimeRaw);
         if (!isNaN(d.getTime())) {
           startTimeStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
         }
+      } else if (t.updated_at && col === 'progress') {
+        const d = new Date(t.updated_at);
+        if (!isNaN(d.getTime())) {
+          startTimeStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' (Est.)';
+        }
       }
 
-      // Format Submit Time
+      // Format Submit Time (Check Backend)
       let submitTimeStr = '—';
-      const submitTimeRaw = t.submitted_at || t.submission_date;
+      const submitTimeRaw = t.submitted_at || t.submission_date || t.updated_at;
       if (submitTimeRaw) {
         const d = new Date(submitTimeRaw);
         if (!isNaN(d.getTime())) {
