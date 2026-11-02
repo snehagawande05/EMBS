@@ -1970,42 +1970,92 @@
     }
     function startTask(taskId) {
       const list = getStartedTasks();
-      if (!list[taskId]) { 
-          list[taskId] = new Date().toISOString(); 
+      const idStr = String(taskId);
+      if (!list[idStr]) { 
+          list[idStr] = new Date().toISOString(); 
           localStorage.setItem(STARTED_KEY, JSON.stringify(list)); 
       }
       showToast('Task started!');
       loadTasks();
     }
+    
     function getTaskColumn(t) {
       if (t.status === 'completed') return 'done';
       if (t.status === 'in_review') return 'review';
       if (t.submission_status === 'rejected') return 'progress';
-      if (getStartedTasks()[t.task_id] || t.submission_link) return 'progress';
+      
+      const startedTasks = getStartedTasks();
+      const idStr = String(t.task_id);
+      
+      // Check if in localStorage or if status is already in_progress
+      if (startedTasks[idStr] || t.submission_link || t.status === 'in_progress') return 'progress';
+      
       return 'assigned';
     }
-        // ───────── Task card render ─────────
+
+    // ───────── Task card render ─────────
     function renderTaskCard(t) {
       const col = getTaskColumn(t);
       const due = formatTaskDate(t.due_date);
       const pr = String(t.priority || 'low').toLowerCase();
+      
+      const startedTasks = getStartedTasks();
+      const taskIdStr = String(t.task_id);
+
+      // Format Assigned Time
+      let assignTimeStr = '—';
+      const assignTimeRaw = t.assigned_at || t.created_at || t.assigned_date;
+      if (assignTimeRaw) {
+        const d = new Date(assignTimeRaw);
+        if (!isNaN(d.getTime())) {
+          assignTimeStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+      }
+
+      // Format Start Time
+      let startTimeStr = '';
+      const startTimeRaw = startedTasks[taskIdStr];
+      if (startTimeRaw) {
+        const d = new Date(startTimeRaw);
+        if (!isNaN(d.getTime())) {
+          startTimeStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+      }
+
+      // Format Submit Time
+      let submitTimeStr = '';
+      const submitTimeRaw = t.submitted_at || t.submission_date;
+      if (submitTimeRaw) {
+        const d = new Date(submitTimeRaw);
+        if (!isNaN(d.getTime())) {
+          submitTimeStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+      }
+
       let action = '';
-      if (col === 'assigned') {
-        action = `<button class="btn-done" onclick="startTask('${t.task_id}')">▶ Start</button>`;
+      if (col === 'done') {
+        action = `<span class="badge badge-completed">Completed ✓</span>`;
+      } else if (col === 'review') {
+        action = `<span class="badge badge-pending">Under review</span>`;
       } else if (col === 'progress') {
         const label = t.submission_status === 'rejected' ? '🔁 Resubmit Work' : '📤 Submit Work';
         action = `<button class="btn-done" onclick="openSubmitModal('${t.task_id}')">${label}</button>`;
-      } else if (col === 'review') {
-        action = `<span class="badge badge-pending">Under review</span>`;
       } else {
-        action = `<span class="badge badge-completed">Completed ✓</span>`;
+        action = `<button class="btn-done" onclick="startTask('${t.task_id}')">▶ Start</button>`;
       }
+
       const sub = t.submission_link
         ? `<div class="task-sub-box">🔗 <a href="${escapeHtml(t.submission_link)}" target="_blank" rel="noopener">View submission</a></div>`
         : '';
       const rejected = (t.submission_status === 'rejected' && t.admin_remark)
         ? `<div class="task-sub-box" style="color:#B91C1C;">Rejected: ${escapeHtml(t.admin_remark)}</div>`
         : '';
+
+      // Time display string
+      let timeDisplay = `⏱️ Assigned: ${assignTimeStr}`;
+      if (startTimeStr) timeDisplay += ` | Started: ${startTimeStr}`;
+      if (submitTimeStr) timeDisplay += ` | Submitted: ${submitTimeStr}`;
+
       return `
         <div class="glass-card task-card">
           <div class="task-top">
@@ -2013,7 +2063,15 @@
             <span class="badge ${priorityClass[pr] || 'badge-low'}">${pr.toUpperCase()}</span>
           </div>
           ${t.description ? `<div style="font-size:11.5px;color:var(--text-dim);margin-bottom:6px;">${escapeHtml(t.description)}</div>` : ''}
-          <div class="task-due">📅 Due: ${due}</div>
+          
+          <!-- Due Date in RED -->
+          <div class="task-due" style="color: #DC2626; font-weight: 600; margin-bottom: 2px;">📅 Due: ${due}</div>
+          
+          <!-- Inline Time Display -->
+          <div style="font-size: 10.5px; color: var(--text-muted); margin-bottom: 10px;">
+            ${timeDisplay}
+          </div>
+
           ${sub}${rejected}
           <div class="task-footer">${action}</div>
         </div>`;
@@ -2070,72 +2128,54 @@
         btn.textContent = 'Submit Work 📤';
       }
     }
-    function renderTaskCard(t) {
-  const col = getTaskColumn(t);
-  const due = formatTaskDate(t.due_date);
-  const pr = (t.priority || 'low').toLowerCase();
-  let action = '';
-  if (col === 'assigned') action = `<button class="btn-done" onclick="startTask('${t.task_id}')">▶ Start</button>`;
-  else if (col === 'progress') action = `<button class="btn-done" onclick="openSubmitModal('${t.task_id}')">📤 Submit Work</button>`;
-  const sub = t.submission_link ? `<div class="task-sub-box">🔗 <a href="${escapeHtml(t.submission_link)}" target="_blank" rel="noopener">View submission</a></div>` : '';
-  return `
-    <div class="glass-card task-card">
-      <div class="task-top">
-        <div class="task-title">${escapeHtml(t.title || '')}</div>
-        <span class="badge ${priorityClass[pr] || 'badge-low'}">${pr.toUpperCase()}</span>
-      </div>
-      <div class="task-due">📅 Due: ${due}</div>
-      ${sub}
-      <div class="task-footer">${action}</div>
-    </div>`;
-}
 
-       async function loadTasks() {
-  const emptyText = { assigned: 'No new task assigned.', progress: 'No task in progress.', review: 'Nothing under review.', done: 'No completed task yet.' };
-  const showAllEmpty = (msg) => {
-    ['Assigned', 'Progress', 'Review', 'Done'].forEach(name => {
-      document.getElementById('col' + name).innerHTML = `<div class="kanban-empty">${msg}</div>`;
-      document.getElementById('cnt' + name).textContent = 0;
-    });
-  };
-  try {
-    const res = await fetch(`${API_URL}?action=getTasks&token=${TOKEN}&_ts=${Date.now()}`, { cache: 'no-store' });
-    const payload = await res.json();
-    console.log('[TASKS] response:', payload);
+    async function loadTasks() {
+      const emptyText = { assigned: 'No new task assigned.', progress: 'No task in progress.', review: 'Nothing under review.', done: 'No completed task yet.' };
+      const showAllEmpty = (msg) => {
+        ['Assigned', 'Progress', 'Review', 'Done'].forEach(name => {
+          document.getElementById('col' + name).innerHTML = `<div class="kanban-empty">${msg}</div>`;
+          document.getElementById('cnt' + name).textContent = 0;
+        });
+      };
+      try {
+        const res = await fetch(`${API_URL}?action=getTasks&token=${TOKEN}&_ts=${Date.now()}`, { cache: 'no-store' });
+        const payload = await res.json();
+        console.log('[TASKS] response:', payload);
 
-    if (payload.status !== 'success') {
-      showAllEmpty('Could not load tasks: ' + (payload.message || 'unknown error'));
-      showToast(payload.message || 'Could not load tasks.');
-      return;
+        if (payload.status !== 'success') {
+          showAllEmpty('Could not load tasks: ' + (payload.message || 'unknown error'));
+          showToast(payload.message || 'Could not load tasks.');
+          return;
+        }
+
+        const arr = ((payload.data && payload.data.data) || []).filter(t => t.assigned_to === USER.employee_id);
+
+        TASK_CACHE = {};
+        const dailyTasks = [];
+        const kanbanTasks = [];
+        arr.forEach(t => {
+          TASK_CACHE[t.task_id] = t;
+          if (isDailyTask(t)) dailyTasks.push(t); else kanbanTasks.push(t);
+        });
+
+        renderDailyTasksSection(dailyTasks).catch(e => console.error('daily section:', e));
+
+        const cols = { assigned: [], progress: [], review: [], done: [] };
+        kanbanTasks.forEach(t => cols[getTaskColumn(t)].push(t));
+        cols.done.sort((a, b) => ((parseDMY(b.due_date) || 0) - (parseDMY(a.due_date) || 0)));
+
+        Object.keys(cols).forEach(key => {
+          const name = key.charAt(0).toUpperCase() + key.slice(1);
+          document.getElementById('col' + name).innerHTML = cols[key].length ? cols[key].map(renderTaskCard).join('') : `<div class="kanban-empty">${emptyText[key]}</div>`;
+          document.getElementById('cnt' + name).textContent = cols[key].length;
+        });
+      } catch (e) {
+        console.error('[TASKS] error:', e);
+        showAllEmpty('Error loading tasks. Check console.');
+        showToast('Could not load tasks.');
+      }
     }
-
-    const arr = ((payload.data && payload.data.data) || []).filter(t => t.assigned_to === USER.employee_id);
-
-    TASK_CACHE = {};
-    const dailyTasks = [];
-    const kanbanTasks = [];
-    arr.forEach(t => {
-      TASK_CACHE[t.task_id] = t;
-      if (isDailyTask(t)) dailyTasks.push(t); else kanbanTasks.push(t);
-    });
-
-    renderDailyTasksSection(dailyTasks).catch(e => console.error('daily section:', e));
-
-    const cols = { assigned: [], progress: [], review: [], done: [] };
-    kanbanTasks.forEach(t => cols[getTaskColumn(t)].push(t));
-    cols.done.sort((a, b) => ((parseDMY(b.due_date) || 0) - (parseDMY(a.due_date) || 0)));
-
-    Object.keys(cols).forEach(key => {
-      const name = key.charAt(0).toUpperCase() + key.slice(1);
-      document.getElementById('col' + name).innerHTML = cols[key].length ? cols[key].map(renderTaskCard).join('') : `<div class="kanban-empty">${emptyText[key]}</div>`;
-      document.getElementById('cnt' + name).textContent = cols[key].length;
-    });
-  } catch (e) {
-    console.error('[TASKS] error:', e);
-    showAllEmpty('Error loading tasks. Check console.');
-    showToast('Could not load tasks.');
-  }
-}
+    
     // Sheet booleans can arrive as true / "TRUE" / "true" / "FALSE" — normalise them.
     function isDailyTask(t) {
       const v = t && t.is_daily;
