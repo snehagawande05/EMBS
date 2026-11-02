@@ -482,6 +482,38 @@
     .cal-holiday-name { color: #9A3412; }
     .cal-cell.cal-hasshift::after { background: #6E217D; }
     .cal-day-modal-card { background: #FFFFFF; border-color: #E4D9E9; box-shadow: 0 24px 60px rgba(38,17,43,0.22); }
+    /* ═══ FIX: Day popup white theme ═══ */
+.cal-day-modal-overlay { background: rgba(38,17,43,0.45); backdrop-filter: none; }
+.cal-day-modal-card {
+  background: #FFFFFF !important;
+  border: 1px solid #E4D9E9;
+  box-shadow: 0 24px 60px rgba(38,17,43,0.22);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.cal-day-modal-header h3 { color: #26112B; }
+.cal-day-modal-close { background: #DC2626; color: #fff; }
+
+.cal-day-modal-row { background: #FAF7FB; border: 1px solid #E4D9E9; }
+.cal-day-modal-row label { color: #85728F; }
+.cal-day-modal-row.in-time .cal-day-modal-time { color: #15803D; }
+.cal-day-modal-row.out-time .cal-day-modal-time { color: #1D4ED8; }
+.cal-day-modal-row.shift-time .cal-day-modal-time { color: #6E217D; }
+
+.dt-section { border-top: 1px solid #E4D9E9; }
+.dt-section-header label { color: #85728F; }
+.dt-empty { color: #85728F; }
+.dt-item { background: #FAF7FB; border: 1px solid #E4D9E9; }
+.dt-item-title { color: #26112B; }
+.dt-item-desc { color: #6F5A79; }
+.dt-item-remark { color: #85728F; border-top-color: #E4D9E9; }
+
+/* Status badges (readable on white) */
+.cal-day-modal-status.st-present   { background: rgba(34,197,94,0.14);  color: #166534; }
+.cal-day-modal-status.st-irregular { background: rgba(124,58,237,0.12); color: #6D28D9; }
+.cal-day-modal-status.st-absent    { background: rgba(220,38,38,0.10);  color: #B91C1C; }
+.cal-day-modal-status.st-halfday   { background: #FFF7ED;               color: #C2410C; }
+.cal-day-modal-status.st-holiday   { background: rgba(249,115,22,0.18); color: #C2410C; }
     .cal-day-modal-row, .dt-item { background: #FAF7FB; }
     .cal-day-modal-row.out-time .cal-day-modal-time { color: #1D4ED8; }
     .cal-day-modal-status.st-off { background: #F1F1F4; color: #52525B; }
