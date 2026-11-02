@@ -2022,11 +2022,21 @@
         }
       }
 
+      // Format Submit Time
+      let submitTimeStr = '—';
+      const submitTimeRaw = t.submitted_at || t.submission_date;
+      if (submitTimeRaw) {
+        const d = new Date(submitTimeRaw);
+        if (!isNaN(d.getTime())) {
+          submitTimeStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+      }
+
       let action = '';
       if (col === 'done') {
         action = `<span class="badge badge-completed">Completed ✓</span>`;
       } else if (col === 'review') {
-        action = `<button class="btn-done" onclick="editTaskReview('${t.task_id}')" style="background:#FEF3C7; border-color:#FCD34D; color:#92400E;">✏️ Edit Task</button>`;
+        action = `<button class="btn-done" onclick="openSubmitModal('${t.task_id}')" style="background:#FEF3C7; border-color:#FCD34D; color:#92400E;">✏️ Edit Submission</button>`;
       } else if (col === 'progress') {
         const label = t.submission_status === 'rejected' ? '🔁 Resubmit Work' : '📤 Submit Work';
         action = `<button class="btn-done" onclick="openSubmitModal('${t.task_id}')">${label}</button>`;
@@ -2043,7 +2053,7 @@
         ? `<div class="task-sub-box" style="color:#B91C1C;">Rejected: ${escapeHtml(t.admin_remark)}</div>`
         : '';
 
-      // Conditionally render Due Date and Time
+      // Conditionally render Due Date and Time based on column
       let metaHtml = '';
       if (col === 'assigned') {
         metaHtml = `
@@ -2053,6 +2063,10 @@
       } else if (col === 'progress') {
         metaHtml = `
           <div style="font-size: 10.5px; color: var(--text-muted); margin-bottom: 10px;">▶️ Started: ${startTimeStr}</div>
+        `;
+      } else if (col === 'done') {
+        metaHtml = `
+          <div style="font-size: 10.5px; color: var(--text-muted); margin-bottom: 10px;">📤 Submitted: ${submitTimeStr}</div>
         `;
       }
 
@@ -2071,15 +2085,6 @@
         </div>`;
     }
 
-    function editTaskReview(taskId) {
-      const t = TASK_CACHE[taskId];
-      if (!t) return;
-      const newTitle = prompt("Edit Task Title:", t.title || '');
-      if (newTitle !== null && newTitle.trim() !== "") {
-        showToast("Task updated: " + newTitle);
-      }
-    }
-
     // ───────── Submit work modal ─────────
     function openSubmitModal(taskId) {
       const t = TASK_CACHE[taskId];
@@ -2089,6 +2094,14 @@
       document.getElementById('submitWorkTaskId').textContent = 'Task ID: ' + taskId;
       document.getElementById('submitWorkLink').value = t.submission_link || '';
       document.getElementById('submitWorkNote').value = '';
+      
+      const btn = document.getElementById('submitWorkBtn');
+      if (t.status === 'in_review') {
+          btn.textContent = 'Update Submission 🔄';
+      } else {
+          btn.textContent = 'Submit Work 📤';
+      }
+      
       document.getElementById('submitWorkModal').classList.add('open');
     }
 
@@ -2104,6 +2117,7 @@
       if (!_submitWorkTaskId) return;
       const btn = document.getElementById('submitWorkBtn');
       btn.disabled = true;
+      const originalText = btn.textContent;
       btn.textContent = 'Submitting...';
       try {
         const res = await fetch(API_URL, {
@@ -2118,7 +2132,7 @@
         });
         const out = await res.json();
         if (out.status === 'success') {
-          showToast('Work submitted for review!');
+          showToast('Work submitted successfully!');
           closeSubmitModal();
           loadTasks();
         } else {
