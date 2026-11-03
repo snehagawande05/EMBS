@@ -1979,16 +1979,18 @@
             return parsed;
         } catch (e) { return {}; } 
     }
-    function startTask(taskId) {
-      const list = getStartedTasks();
-      const idStr = String(taskId);
-      if (!list[idStr]) { 
-          list[idStr] = new Date().toISOString(); 
-          localStorage.setItem(STARTED_KEY, JSON.stringify(list)); 
-      }
-      showToast('Task started!');
-      loadTasks();
-    }
+     async function startTask(taskId) {
+  const list = getStartedTasks();
+  const idStr = String(taskId);
+  if (!list[idStr]) { list[idStr] = new Date().toISOString(); localStorage.setItem(STARTED_KEY, JSON.stringify(list)); }
+  try {
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ token: TOKEN, action: 'startTask', task_id: taskId }) });
+    const out = await res.json();
+    if (out.status !== 'success') { showToast(out.message || 'Could not start task.'); return; }
+    showToast('Task started!');
+  } catch (e) { showToast('Network error.'); return; }
+  loadTasks();
+}
     
     function getTaskColumn(t) {
       if (t.status === 'completed') return 'done';
@@ -2023,12 +2025,8 @@ function renderTaskCard(t) {
 
   const assignTimeStr = fmtDT(t.assigned_at || t.created_at || t.assigned_date) || '—';
 
-  const startTimeStr =
-    fmtDT(t.started_at || t.start_time || startedTasks[taskIdStr]) ||
-    (t.updated_at ? fmtDT(t.updated_at, ' (Est.)') : null) || '—';
-
-  const submitTimeStr =
-    fmtDT(t.submitted_at || t.submission_date || t.completed_at || t.reviewed_at || t.updated_at) || '—';
+     const startTimeStr = t.started_at_display || fmtDT(startedTasks[taskIdStr]) || '—';
+  const submitTimeStr = t.submitted_at_display || '—';
 
   let action = '';
   if (col === 'done') {
@@ -2118,7 +2116,7 @@ function renderTaskCard(t) {
           method: 'POST',
           body: JSON.stringify({
             token: TOKEN,
-            action: 'submitTaskWork',
+            action: 'submitTask',
             task_id: _submitWorkTaskId,
             submission_link: link,
             submission_note: note
