@@ -1992,19 +1992,17 @@
   loadTasks();
 }
     
-    function getTaskColumn(t) {
-      if (t.status === 'completed') return 'done';
-      if (t.status === 'in_review') return 'review';
-      if (t.submission_status === 'rejected') return 'progress';
-      
-      const startedTasks = getStartedTasks();
-      const idStr = String(t.task_id);
-      
-      // Check if in localStorage or if status is already in_progress
-      if (startedTasks[idStr] || t.submission_link || t.status === 'in_progress') return 'progress';
-      
-      return 'assigned';
-    }
+     function getTaskColumn(t) {
+  if (t.status === 'completed') return 'done';
+  if (t.status === 'in_review') return 'review';
+  if (t.submission_status === 'rejected') return 'progress';
+
+  // Start dabane ke baad hi In Progress me jaye
+  const startedTasks = getStartedTasks();
+  if (t.started_at_display || startedTasks[String(t.task_id)]) return 'progress';
+
+  return 'assigned';
+}
 
       // ───────── Task card render ─────────
 function fmtDT(raw, suffix) {
@@ -2023,7 +2021,7 @@ function renderTaskCard(t) {
   const startedTasks = getStartedTasks();
   const taskIdStr = String(t.task_id);
 
-  const assignTimeStr = fmtDT(t.assigned_at || t.created_at || t.assigned_date) || '—';
+ const assignTimeStr = t.assigned_at_display || '—';
 
      const startTimeStr = t.started_at_display || fmtDT(startedTasks[taskIdStr]) || '—';
   const submitTimeStr = t.submitted_at_display || '—';
