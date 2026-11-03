@@ -2004,102 +2004,91 @@
       return 'assigned';
     }
 
-    // ───────── Task card render ─────────
-    function renderTaskCard(t) {
-      const col = getTaskColumn(t);
-      const due = formatTaskDate(t.due_date);
-      const pr = String(t.priority || 'low').toLowerCase();
-      
-      const startedTasks = getStartedTasks();
-      const taskIdStr = String(t.task_id);
+     // ───────── Task card render ─────────
+function fmtDT(raw, suffix) {
+  if (!raw) return null;
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ', ' +
+         d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) +
+         (suffix || '');
+}
 
-      // Format Assigned Time
-      let assignTimeStr = '—';
-      const assignTimeRaw = t.assigned_at || t.created_at || t.assigned_date;
-      if (assignTimeRaw) {
-        const d = new Date(assignTimeRaw);
-        if (!isNaN(d.getTime())) {
-          assignTimeStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-        }
-      }
+function renderTaskCard(t) {
+  const col = getTaskColumn(t);
+  const due = formatTaskDate(t.due_date);
+  const pr = String(t.priority || 'low').toLowerCase();
+  const startedTasks = getStartedTasks();
+  const taskIdStr = String(t.task_id);
 
-      // Format Start Time (Check Backend & LocalStorage)
-      let startTimeStr = '—';
-      const startTimeRaw = t.started_at || t.start_time || startedTasks[taskIdStr];
-      if (startTimeRaw) {
-        const d = new Date(startTimeRaw);
-        if (!isNaN(d.getTime())) {
-          startTimeStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-        }
-      } else if (t.updated_at && col === 'progress') {
-        const d = new Date(t.updated_at);
-        if (!isNaN(d.getTime())) {
-          startTimeStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' (Est.)';
-        }
-      }
+  const assignTimeStr = fmtDT(t.assigned_at || t.created_at || t.assigned_date) || '—';
 
-      // Format Submit Time (Check Backend)
-      let submitTimeStr = '—';
-      const submitTimeRaw = t.submitted_at || t.submission_date || t.updated_at;
-      if (submitTimeRaw) {
-        const d = new Date(submitTimeRaw);
-        if (!isNaN(d.getTime())) {
-          submitTimeStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-        }
-      }
+  const startTimeStr =
+    fmtDT(t.started_at || t.start_time || startedTasks[taskIdStr]) ||
+    (t.updated_at && col !== 'assigned' ? fmtDT(t.updated_at, ' (Est.)') : null) || '—';
 
-      let action = '';
-      if (col === 'done') {
-        action = `<span class="badge badge-completed">Completed ✓</span>`;
-      } else if (col === 'review') {
-        action = `<button class="btn-done" onclick="openSubmitModal('${t.task_id}')" style="background:#FEF3C7; border-color:#FCD34D; color:#92400E;">✏️ Edit Submission</button>`;
-      } else if (col === 'progress') {
-        const label = t.submission_status === 'rejected' ? '🔁 Resubmit Work' : '📤 Submit Work';
-        action = `<button class="btn-done" onclick="openSubmitModal('${t.task_id}')">${label}</button>`;
-      } else {
-        action = `<button class="btn-done" onclick="startTask('${t.task_id}')">▶ Start</button>`;
-      }
+  const submitTimeStr =
+    fmtDT(t.submitted_at || t.submission_date || t.completed_at || t.reviewed_at || t.updated_at) || '—';
 
-      // View submission link (Hide for Done column)
-      const sub = (t.submission_link && col !== 'done')
-        ? `<div class="task-sub-box">🔗 <a href="${escapeHtml(t.submission_link)}" target="_blank" rel="noopener">View submission</a></div>`
-        : '';
-        
-      const rejected = (t.submission_status === 'rejected' && t.admin_remark)
-        ? `<div class="task-sub-box" style="color:#B91C1C;">Rejected: ${escapeHtml(t.admin_remark)}</div>`
-        : '';
+  let action = '';
+  if (col === 'done') {
+    action = `<span class="badge badge-completed">Completed ✓</span>`;
+  } else if (col === 'review') {
+    // green button (same btn-done class, no yellow inline style)
+    action = `<button class="btn-done" onclick="openSubmitModal('${t.task_id}')">✏️ Edit Submission</button>`;
+  } else if (col === 'progress') {
+    const label = t.submission_status === 'rejected' ? '🔁 Resubmit Work' : '📤 Submit Work';
+    action = `<button class="btn-done" onclick="openSubmitModal('${t.task_id}')">${label}</button>`;
+  } else {
+    action = `<button class="btn-done" onclick="startTask('${t.task_id}')">▶ Start</button>`;
+  }
 
-      // Conditionally render Due Date and Time based on column
-      let metaHtml = '';
-      if (col === 'assigned') {
-        metaHtml = `
-          <div class="task-due" style="color: #DC2626; font-weight: 600; margin-bottom: 2px;">📅 Due: ${due}</div>
-          <div style="font-size: 10.5px; color: var(--text-muted); margin-bottom: 10px;">⏱️ Assigned: ${assignTimeStr}</div>
-        `;
-      } else if (col === 'progress') {
-        metaHtml = `
-          <div style="font-size: 10.5px; color: var(--text-muted); margin-bottom: 10px;">▶️ Started: ${startTimeStr}</div>
-        `;
-      } else if (col === 'done') {
-        metaHtml = `
-          <div style="font-size: 10.5px; color: var(--text-muted); margin-bottom: 10px;">📤 Submitted: ${submitTimeStr}</div>
-        `;
-      }
+  const sub = (t.submission_link && col !== 'done')
+    ? `<div class="task-sub-box">🔗 <a href="${escapeHtml(t.submission_link)}" target="_blank" rel="noopener">View submission</a></div>`
+    : '';
 
-      return `
-        <div class="glass-card task-card">
-          <div class="task-top">
-            <div class="task-title">${escapeHtml(t.title || '')}</div>
-            <span class="badge ${priorityClass[pr] || 'badge-low'}">${pr.toUpperCase()}</span>
-          </div>
-          ${t.description ? `<div style="font-size:11.5px;color:var(--text-dim);margin-bottom:6px;">${escapeHtml(t.description)}</div>` : ''}
-          
-          ${metaHtml}
+  const rejected = (t.submission_status === 'rejected' && t.admin_remark)
+    ? `<div class="task-sub-box" style="color:#B91C1C;">Rejected: ${escapeHtml(t.admin_remark)}</div>`
+    : '';
 
-          ${sub}${rejected}
-          <div class="task-footer">${action}</div>
-        </div>`;
-    }
+  const line = (icon, label, val) =>
+    `<div style="font-size:10.5px; color:var(--text-muted); margin-bottom:3px;">${icon} ${label}: ${val}</div>`;
+
+  let metaHtml = '';
+  if (col === 'assigned') {
+    metaHtml =
+      `<div class="task-due" style="color:#DC2626; font-weight:600; margin-bottom:3px;">📅 Due: ${due}</div>` +
+      line('⏱️', 'Assigned', assignTimeStr);
+  } else if (col === 'progress') {
+    metaHtml =
+      `<div class="task-due" style="color:#DC2626; font-weight:600; margin-bottom:3px;">📅 Due: ${due}</div>` +
+      line('⏱️', 'Assigned', assignTimeStr) +
+      line('▶️', 'Started', startTimeStr);
+  } else if (col === 'review') {
+    metaHtml =
+      line('⏱️', 'Assigned', assignTimeStr) +
+      line('▶️', 'Started', startTimeStr) +
+      line('📤', 'Submitted', submitTimeStr);
+  } else if (col === 'done') {
+    metaHtml =
+      line('⏱️', 'Assigned', assignTimeStr) +
+      line('▶️', 'Started', startTimeStr) +
+      line('✅', 'Submitted', submitTimeStr);
+  }
+  metaHtml += '<div style="margin-bottom:7px;"></div>';
+
+  return `
+    <div class="glass-card task-card">
+      <div class="task-top">
+        <div class="task-title">${escapeHtml(t.title || '')}</div>
+        <span class="badge ${priorityClass[pr] || 'badge-low'}">${pr.toUpperCase()}</span>
+      </div>
+      ${t.description ? `<div style="font-size:11.5px;color:var(--text-dim);margin-bottom:6px;">${escapeHtml(t.description)}</div>` : ''}
+      ${metaHtml}
+      ${sub}${rejected}
+      <div class="task-footer">${action}</div>
+    </div>`;
+}
 
     // ───────── Submit work modal ─────────
     function openSubmitModal(taskId) {
