@@ -2004,12 +2004,12 @@
       return 'assigned';
     }
 
-     // ───────── Task card render ─────────
+      // ───────── Task card render ─────────
 function fmtDT(raw, suffix) {
   if (!raw) return null;
   const d = new Date(raw);
   if (isNaN(d.getTime())) return null;
-  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ', ' +
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' +
          d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) +
          (suffix || '');
 }
@@ -2025,7 +2025,7 @@ function renderTaskCard(t) {
 
   const startTimeStr =
     fmtDT(t.started_at || t.start_time || startedTasks[taskIdStr]) ||
-    (t.updated_at && col !== 'assigned' ? fmtDT(t.updated_at, ' (Est.)') : null) || '—';
+    (t.updated_at ? fmtDT(t.updated_at, ' (Est.)') : null) || '—';
 
   const submitTimeStr =
     fmtDT(t.submitted_at || t.submission_date || t.completed_at || t.reviewed_at || t.updated_at) || '—';
@@ -2034,7 +2034,6 @@ function renderTaskCard(t) {
   if (col === 'done') {
     action = `<span class="badge badge-completed">Completed ✓</span>`;
   } else if (col === 'review') {
-    // green button (same btn-done class, no yellow inline style)
     action = `<button class="btn-done" onclick="openSubmitModal('${t.task_id}')">✏️ Edit Submission</button>`;
   } else if (col === 'progress') {
     const label = t.submission_status === 'rejected' ? '🔁 Resubmit Work' : '📤 Submit Work';
@@ -2053,29 +2052,19 @@ function renderTaskCard(t) {
 
   const line = (icon, label, val) =>
     `<div style="font-size:10.5px; color:var(--text-muted); margin-bottom:3px;">${icon} ${label}: ${val}</div>`;
+  const dueLine = `<div class="task-due" style="color:#DC2626; font-weight:600; margin-bottom:3px;">📅 Due: ${due}</div>`;
 
   let metaHtml = '';
   if (col === 'assigned') {
-    metaHtml =
-      `<div class="task-due" style="color:#DC2626; font-weight:600; margin-bottom:3px;">📅 Due: ${due}</div>` +
-      line('⏱️', 'Assigned', assignTimeStr);
+    metaHtml = dueLine + line('⏱️', 'Assigned', assignTimeStr);
   } else if (col === 'progress') {
-    metaHtml =
-      `<div class="task-due" style="color:#DC2626; font-weight:600; margin-bottom:3px;">📅 Due: ${due}</div>` +
-      line('⏱️', 'Assigned', assignTimeStr) +
-      line('▶️', 'Started', startTimeStr);
+    metaHtml = dueLine + line('▶️', 'Started', startTimeStr);
   } else if (col === 'review') {
-    metaHtml =
-      line('⏱️', 'Assigned', assignTimeStr) +
-      line('▶️', 'Started', startTimeStr) +
-      line('📤', 'Submitted', submitTimeStr);
+    metaHtml = '';   // review me koi date/time nahi
   } else if (col === 'done') {
-    metaHtml =
-      line('⏱️', 'Assigned', assignTimeStr) +
-      line('▶️', 'Started', startTimeStr) +
-      line('✅', 'Submitted', submitTimeStr);
+    metaHtml = line('📤', 'Submitted', submitTimeStr);
   }
-  metaHtml += '<div style="margin-bottom:7px;"></div>';
+  if (metaHtml) metaHtml += '<div style="margin-bottom:7px;"></div>';
 
   return `
     <div class="glass-card task-card">
