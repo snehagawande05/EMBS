@@ -532,6 +532,25 @@
     .btn-download-pdf { background: #6E217D; }
     .punch-col-label { color: #85728F; }
     .bd-tab.active { border-bottom-color: #6E217D; }
+    /* ═══ Daily Checklist card ═══ */
+#dailyChecklistCard { margin-bottom: 14px; }
+.chk-widget { max-width: 460px; border-radius: 22px; overflow: hidden; border: 1px solid #2c2c2e; background: #212121; box-shadow: 0 10px 28px rgba(38,17,43,0.18); }
+.chk-head { background: #1473E6; color: #fff; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; }
+.chk-head-title { display: flex; align-items: center; gap: 10px; font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; }
+.chk-head-title svg { width: 26px; height: 26px; flex-shrink: 0; }
+.chk-count { background: rgba(255,255,255,0.22); border-radius: 99px; padding: 4px 12px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.chk-body { padding: 4px 20px 6px; }
+.chk-row { display: flex; align-items: center; gap: 14px; cursor: pointer; }
+.chk-text { flex: 1; min-width: 0; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.09); color: #F2F2F7; font-size: 16.5px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.15s; }
+.chk-row:last-child .chk-text { border-bottom: none; }
+.chk-row.done .chk-text { color: #8E8E93; text-decoration: line-through; }
+.chk-radio { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; margin: 0; flex-shrink: 0; border: 2px solid #8E8E93; border-radius: 50%; background: transparent; cursor: pointer; display: grid; place-content: center; transition: background 0.15s, border-color 0.15s; }
+.chk-radio:hover { border-color: #C7C7CC; }
+.chk-radio:checked { background: #34C759; border-color: #34C759; }
+.chk-radio:checked::after { content: ''; width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-1px, -1px); }
+.chk-more { display: block; width: 100%; background: none; border: none; text-align: left; padding: 10px 20px 16px; font-size: 15px; color: #8E8E93; cursor: pointer; font-family: 'Inter', sans-serif; }
+.chk-more:hover { color: #C7C7CC; }
+.chk-foot-pad { height: 10px; }
   </style>
 </head>
 
@@ -652,7 +671,8 @@
 
     <!-- NEW Daily Tasks Section -->
     <div class="tasks-section" id="dailyTasksSection" style="display: none; margin-bottom: 22px;">
-      <div class="section-label">🔄 Today's Daily Tasks</div>
+             <div class="section-label">🔄 Today's Daily Tasks</div>
+      <div id="dailyChecklistCard"></div>
       <div id="dailyTasksListContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
     </div>
 
@@ -1273,7 +1293,7 @@
     function toggleMobileActions() { document.getElementById('mobileActionsSheet').classList.toggle('open'); }
     function doLogout() {
       const keep = {};
-      Object.keys(localStorage).forEach(k => { if (k.startsWith('started_tasks_')) keep[k] = localStorage.getItem(k); });
+      Object.keys(localStorage).forEach(k => {if (k.startsWith('started_tasks_') || k.startsWith('daily_chk_')) keep[k] = localStorage.getItem(k);});
       localStorage.clear();
       Object.keys(keep).forEach(k => localStorage.setItem(k, keep[k]));
       window.location.href = 'index.html';
@@ -2270,11 +2290,12 @@ function renderTaskCard(t) {
     async function renderDailyTasksSection(tasks) {
       const section = document.getElementById('dailyTasksSection');
       const container = document.getElementById('dailyTasksListContainer');
-      if (!tasks || tasks.length === 0) { section.style.display = 'none'; return; }
+            if (!tasks || tasks.length === 0) { section.style.display = 'none'; renderDailyChecklist([]); return; }
 
       await PROFILE_READY;                      // weekly_off must be loaded first
       const offReason = await getTodayOffReason();
-      if (offReason) { section.style.display = 'none'; return; }   // off day: no daily tasks
+            if (offReason) { section.style.display = 'none'; renderDailyChecklist([]); return; }   // off day: no daily tasks
+      renderDailyChecklist(tasks.slice());   // keep admin's original order (before the sort below)
 
       const logged = await getLoggedDailyTitlesToday();
       const isLogged = t => logged.has(String(t.title || '').trim().toLowerCase());
@@ -2299,6 +2320,86 @@ function renderTaskCard(t) {
       }).join('');
     }
 
+        /* ══════════ Daily checklist card (resets every IST day) ══════════ */
+    const CHK_PREFIX = 'daily_chk_';
+    const CHK_VISIBLE = 6;
+    let _chkTasks = [];
+    let _chkExpanded = false;
+    let _chkDay = '';
+
+    function chkTodayKey() { return formatDateYMD(getISTDate()); }
+    function chkStorageKey() { return CHK_PREFIX + USER.employee_id + '_' + chkTodayKey(); }
+    function chkLoad() {
+      try { return JSON.parse(localStorage.getItem(chkStorageKey()) || '{}') || {}; } catch (e) { return {}; }
+    }
+    function chkSave(obj) {
+      try { localStorage.setItem(chkStorageKey(), JSON.stringify(obj)); } catch (e) { /* storage full/blocked */ }
+    }
+    function chkCleanup() {   // drop previous days' progress
+      try {
+        const keep = chkStorageKey(), mine = CHK_PREFIX + USER.employee_id + '_';
+        Object.keys(localStorage).forEach(k => { if (k.startsWith(mine) && k !== keep) localStorage.removeItem(k); });
+      } catch (e) {}
+    }
+
+    function renderDailyChecklist(tasks) {
+      const host = document.getElementById('dailyChecklistCard');
+      if (!host) return;
+      _chkTasks = Array.isArray(tasks) ? tasks : [];
+      _chkDay = chkTodayKey();
+      chkCleanup();
+      if (!_chkTasks.length) { host.innerHTML = ''; return; }
+
+      const state = chkLoad();
+      const total = _chkTasks.length;
+      const done = _chkTasks.filter(t => state[String(t.task_id)]).length;
+      const shown = _chkExpanded ? _chkTasks : _chkTasks.slice(0, CHK_VISIBLE);
+      const hidden = total - shown.length;
+
+      const rows = shown.map(t => {
+        const id = String(t.task_id);
+        const isDone = !!state[id];
+        const title = escapeHtml(t.title || 'Untitled task');
+        return `<label class="chk-row${isDone ? ' done' : ''}">
+          <input type="radio" class="chk-radio" name="chk_${escapeHtml(id)}" ${isDone ? 'checked' : ''}
+                 onclick="event.preventDefault(); toggleDailyChecklist('${escapeHtml(id)}')" />
+          <span class="chk-text" title="${title}">${title}</span>
+        </label>`;
+      }).join('');
+
+      let footer = '<div class="chk-foot-pad"></div>';
+      if (hidden > 0) footer = `<button type="button" class="chk-more" onclick="chkToggleExpand()">${hidden} more</button>`;
+      else if (_chkExpanded && total > CHK_VISIBLE) footer = `<button type="button" class="chk-more" onclick="chkToggleExpand()">Show less</button>`;
+
+      host.innerHTML = `
+        <div class="chk-widget">
+          <div class="chk-head">
+            <div class="chk-head-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="m8.5 13.5 2.5 2.5 4.5-4.5"/></svg>
+              Tasks
+            </div>
+            <div class="chk-count">${done}/${total} done</div>
+          </div>
+          <div class="chk-body">${rows}</div>
+          ${footer}
+        </div>`;
+    }
+
+    function toggleDailyChecklist(taskId) {
+      const state = chkLoad();
+      const id = String(taskId);
+      if (state[id]) delete state[id]; else state[id] = new Date().toISOString();
+      chkSave(state);
+      renderDailyChecklist(_chkTasks);
+      if (state[id] && _chkTasks.length && _chkTasks.every(t => state[String(t.task_id)])) showToast("All of today's tasks are done! 🎉");
+    }
+
+    function chkToggleExpand() { _chkExpanded = !_chkExpanded; renderDailyChecklist(_chkTasks); }
+
+    // Page left open past midnight → start the new day fresh.
+    setInterval(() => {
+      if (_chkDay && _chkDay !== chkTodayKey()) { _chkExpanded = false; loadTasks(); }
+    }, 60000);
     // Opens the Daily Tasks form with today's date and this task's title pre-filled.
     function logDailyTask(taskId) {
       const t = TASK_CACHE[taskId];
