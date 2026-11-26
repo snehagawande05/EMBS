@@ -551,6 +551,8 @@
 .chk-more { display: block; width: 100%; background: none; border: none; text-align: left; padding: 10px 20px 16px; font-size: 15px; color: #8E8E93; cursor: pointer; font-family: 'Inter', sans-serif; }
 .chk-more:hover { color: #C7C7CC; }
 .chk-foot-pad { height: 10px; }
+.modal-body #dailyChecklistCard { margin-bottom: 16px; }
+.modal-body .chk-widget { max-width: 100%; }
   </style>
 </head>
 
@@ -672,7 +674,6 @@
     <!-- NEW Daily Tasks Section -->
     <div class="tasks-section" id="dailyTasksSection" style="display: none; margin-bottom: 22px;">
              <div class="section-label">🔄 Today's Daily Tasks</div>
-      <div id="dailyChecklistCard"></div>
       <div id="dailyTasksListContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
     </div>
 
@@ -702,6 +703,9 @@
       <div class="modal-card">
         <div class="modal-header"><h3>📝 My Self-Logged Tasks</h3><button class="modal-close-btn" onclick="closeDailyTasksModal()">✕ Close</button></div>
         <div class="modal-body">
+          <div class="modal-body">
+  <div id="dailyChecklistCard"></div>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
             <div style="font-size:12px; color:var(--text-muted);">Your self-logged daily work, submitted for admin approval.</div>
             <button type="button" class="btn-dt-add" id="dtmAddToggleBtn" onclick="toggleDtModalAddForm()">+ Add Task</button>
@@ -1914,6 +1918,7 @@
     function openDailyTasksModal() {
       document.getElementById('dailyTasksModal').classList.add('open');
       document.getElementById('dtmAddForm').classList.remove('open');
+      renderDailyChecklist(_chkTasks);
       loadMyDailyTasksList();
     }
     function closeDailyTasksModal() {
