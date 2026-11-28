@@ -804,6 +804,16 @@
         <div class="cal-day-modal-row in-time"><label>In-Time</label><div class="cal-day-modal-time" id="calDayModalIn">—</div></div>
         <div class="cal-day-modal-row out-time"><label>Out-Time</label><div class="cal-day-modal-time" id="calDayModalOut">—</div></div>
         <div class="cal-day-modal-row shift-time"><label id="calDayModalShiftLabel">Shift</label><div class="cal-day-modal-time" id="calDayModalShift">—</div></div>
+
+        <!-- NEW: Daily Checklist history (us din kaun se tasks complete kiye) -->
+        <div class="dt-section" id="calDayChecklistSection">
+          <div class="dt-section-header">
+            <label>✅ Daily Checklist</label>
+            <span class="badge badge-low" id="calDayChecklistCount"></span>
+          </div>
+          <div id="calDayChecklistList"></div>
+        </div>
+
         <div class="dt-section">
           <div class="dt-section-header"><label>📝 Daily Tasks</label></div>
           <div id="calDayModalTasksList"><div class="dt-empty">Loading…</div></div>
@@ -1873,6 +1883,9 @@
       else if (defaultTmpl) { shiftLabel.textContent = 'Standard Shift'; shiftEl.textContent = `${defaultTmpl.shift_name || 'Shift'} (${formatTime12Hour(defaultTmpl.start_time)} – ${formatTime12Hour(defaultTmpl.end_time)})`; }
       else { shiftLabel.textContent = 'Shift'; shiftEl.textContent = 'No shift assigned'; }
 
+      // NEW: us din ka checklist record dikhao
+      renderCalDayChecklist(dateKey, !!isOffDay);
+
       document.getElementById('calDayModalOverlay').classList.add('open');
     }
 
@@ -2340,11 +2353,89 @@ function renderTaskCard(t) {
     function chkSave(obj) {
       try { localStorage.setItem(chkStorageKey(), JSON.stringify(obj)); } catch (e) { /* storage full/blocked */ }
     }
-    function chkCleanup() {   // drop previous days' progress
+    function chkCleanup() {   // drop previous days' temporary tick-state (permanent record chkHist me rehta hai)
       try {
         const keep = chkStorageKey(), mine = CHK_PREFIX + USER.employee_id + '_';
         Object.keys(localStorage).forEach(k => { if (k.startsWith(mine) && k !== keep) localStorage.removeItem(k); });
       } catch (e) {}
+    }
+
+    /* ══════════ Checklist HISTORY (permanent, kabhi delete nahi hota) ══════════
+       Format: daily_chk_history_<empId> = {
+         "2026-11-28": {
+            tasks: [ {id, title}, ... ],          // us din ki poori list
+            done:  { <id>: { at: ISO, title } }   // jo complete kiye
+         }
+       }
+       NOTE: Ye abhi sirf is browser me save hota hai (localStorage). */
+    const CHK_HIST_PREFIX = 'daily_chk_history_';
+    function chkHistKey() { return CHK_HIST_PREFIX + USER.employee_id; }
+    function chkHistLoad() {
+      try { return JSON.parse(localStorage.getItem(chkHistKey()) || '{}') || {}; } catch (e) { return {}; }
+    }
+    function chkHistSave(h) {
+      try { localStorage.setItem(chkHistKey(), JSON.stringify(h)); } catch (e) { /* storage full/blocked */ }
+    }
+
+    // Aaj ki checklist ko history me sync karta hai (tick / untick dono)
+    function chkHistSync(state) {
+      if (!_chkTasks.length) return;
+      const h = chkHistLoad();
+      const key = chkTodayKey();
+      const prev = (h[key] && h[key].done) || {};
+      const ids = new Set(_chkTasks.map(t => String(t.task_id)));
+      const done = {};
+      // admin ne jo task baad me hata diya, uska purana done record bacha ke rakho
+      Object.keys(prev).forEach(id => { if (!ids.has(id)) done[id] = prev[id]; });
+      _chkTasks.forEach(t => {
+        const id = String(t.task_id);
+        if (state[id]) done[id] = { at: state[id], title: t.title || 'Untitled task' };
+      });
+      h[key] = {
+        tasks: _chkTasks.map(t => ({ id: String(t.task_id), title: t.title || 'Untitled task' })),
+        done: done
+      };
+      chkHistSave(h);
+    }
+
+    // Calendar popup me us date ka checklist record dikhao
+    function renderCalDayChecklist(dateKey, isOffDay) {
+      const sec = document.getElementById('calDayChecklistSection');
+      const list = document.getElementById('calDayChecklistList');
+      const cnt = document.getElementById('calDayChecklistCount');
+      if (!sec || !list || !cnt) return;
+
+      const day = chkHistLoad()[dateKey];
+      const done = (day && day.done) || {};
+      const tasks = (day && day.tasks) || [];
+
+      // Off day / holiday par agar kuch tick nahi hua to section hide
+      if (isOffDay && !Object.keys(done).length) { sec.style.display = 'none'; return; }
+      sec.style.display = 'block';
+
+      if (!tasks.length && !Object.keys(done).length) {
+        cnt.textContent = '';
+        list.innerHTML = '<div class="dt-empty">No checklist activity for this date.</div>';
+        return;
+      }
+
+      const fmt = iso => {
+        const d = new Date(iso);
+        return isNaN(d.getTime()) ? '' : d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+      };
+      const known = new Set(tasks.map(t => t.id));
+      const extra = Object.keys(done).filter(id => !known.has(id)).map(id => ({ id: id, title: done[id].title }));
+      const all = tasks.concat(extra);
+      const doneCount = all.filter(t => done[t.id]).length;
+      cnt.textContent = `${doneCount}/${all.length} done`;
+
+      list.innerHTML = all.map(t => {
+        const d = done[t.id];
+        return `<div class="dt-item" style="display:flex; justify-content:space-between; gap:8px; align-items:center; padding:9px 12px;">
+          <div class="dt-item-title" style="${d ? '' : 'color:var(--text-dim);'}">${d ? '✓' : '○'} ${escapeHtml(t.title || '')}</div>
+          <span style="font-size:11.5px; color:var(--text-dim); white-space:nowrap;">${d ? fmt(d.at) : 'pending'}</span>
+        </div>`;
+      }).join('');
     }
 
     function renderDailyChecklist(tasks) {
@@ -2356,6 +2447,7 @@ function renderTaskCard(t) {
       if (!_chkTasks.length) { host.innerHTML = ''; return; }
 
       const state = chkLoad();
+      chkHistSync(state);   // NEW: har render par aaj ka record history me save
       const total = _chkTasks.length;
       const done = _chkTasks.filter(t => state[String(t.task_id)]).length;
       const shown = _chkExpanded ? _chkTasks : _chkTasks.slice(0, CHK_VISIBLE);
